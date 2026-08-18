@@ -467,13 +467,42 @@ tr.rec td { border-bottom-color: transparent; }
       <button id="tabChw" onclick="setSystem('CHW')">Chilled Water</button>
     </div>
 
-    <div class="row" style="margin-bottom:10px;">
-      <div>
-        <label>ΔT (K)</label>
-        <select id="deltaT" onchange="recalc(); saveSettings();">
-          <!-- Options populated by JS based on system -->
-        </select>
+    <!-- Temperature mode -->
+    <div style="margin-bottom:12px;">
+      <div class="input-mode" style="margin-bottom:10px;">
+        <button id="tempModeStd" class="active" onclick="setTempMode('std')">Standard ΔT</button>
+        <button id="tempModeCustom" onclick="setTempMode('custom')">Flow &amp; Return temps</button>
       </div>
+
+      <!-- Standard mode - just ΔT -->
+      <div id="stdTempWrap">
+        <label>ΔT (K)</label>
+        <input type="number" id="deltaT" value="20" min="1" max="50" step="0.5" oninput="recalc(); saveSettings();" style="max-width:160px;">
+        <p class="note" style="margin-top:6px;">Uses typical fluid properties for the system (LTHW ≈70 °C / CHW ≈10 °C).</p>
+      </div>
+
+      <!-- Custom mode - Flow & Return -->
+      <div id="customTempWrap" style="display:none;">
+        <div class="row">
+          <div>
+            <label>Flow temp (°C)</label>
+            <input type="number" id="flowTemp" value="80" min="-10" max="130" step="0.5" oninput="updateFromFlowReturn();">
+          </div>
+          <div>
+            <label>Return temp (°C)</label>
+            <input type="number" id="returnTemp" value="60" min="-10" max="130" step="0.5" oninput="updateFromFlowReturn();">
+          </div>
+        </div>
+        <div class="converted" style="margin-top:8px;">
+          <span>Temperature difference: <strong id="derivedDelta">20.0</strong> K</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Hidden fields still used by the calculation logic -->
+    <input type="hidden" id="meanTemp" value="70">
+
+    <div class="row" style="margin-bottom:10px;">
       <div>
         <label>Pressure drop</label>
         <select id="paTarget" onchange="recalc(); saveSettings();">
@@ -482,24 +511,27 @@ tr.rec td { border-bottom-color: transparent; }
           <option value="300" selected>300 Pa/m</option>
         </select>
       </div>
+      <div id="glycolWrap">
+        <label>Glycol (Ethylene / MEG)</label>
+        <select id="glycol" onchange="recalc(); saveSettings();">
+          <option value="0" selected>None (pure water)</option>
+          <option value="5">5% Ethylene (MEG)</option>
+          <option value="10">10% Ethylene (MEG)</option>
+          <option value="15">15% Ethylene (MEG)</option>
+          <option value="20">20% Ethylene (MEG)</option>
+          <option value="25">25% Ethylene (MEG)</option>
+          <option value="30">30% Ethylene (MEG)</option>
+          <option value="40">40% Ethylene (MEG)</option>
+        </select>
+      </div>
     </div>
-    <div id="glycolWrap" style="margin-bottom:8px;">
-      <label>Glycol (Ethylene / MEG)</label>
-      <select id="glycol" onchange="recalc(); saveSettings();">
-        <option value="0" selected>None (pure water)</option>
-        <option value="5">5% Ethylene (MEG)</option>
-        <option value="10">10% Ethylene (MEG)</option>
-        <option value="15">15% Ethylene (MEG)</option>
-        <option value="20">20% Ethylene (MEG)</option>
-        <option value="25">25% Ethylene (MEG)</option>
-        <option value="30">30% Ethylene (MEG)</option>
-        <option value="40">40% Ethylene (MEG)</option>
-      </select>
-    </div>
-    <p class="pa-note" id="paNote">Capacities scaled from 300 Pa/m base data (approximate for turbulent flow).</p>
+    <p class="pa-note" id="paNote" style="display:none;">Capacities scaled from 300 Pa/m base data (approx for turbulent flow).</p>
     <p class="note" id="glycolNote" style="display:none;">
-      Ethylene Glycol = Mono Ethylene Glycol (MEG) — same fluid. Propylene glycol is different (safer but higher viscosity).<br>
-      Glycol factors are approximate. Always confirm with fluid supplier data for design.
+      Ethylene Glycol = Mono Ethylene Glycol (MEG). Propylene is different (safer, higher viscosity).<br>
+      Glycol factors approximate. Max flow assumes reference viscosity; large temp deviations may need verification.
+    </p>
+    <p class="note" id="tempNote" style="margin-top:4px;">
+      In <strong>Flow &amp; Return</strong> mode the temperature difference is calculated automatically from the two temperatures you enter.
     </p>
 
     <div class="input-mode">
@@ -700,31 +732,32 @@ function setSystem(s) {
   document.getElementById('tabLthw').classList.toggle('active', s === 'LTHW');
   document.getElementById('tabChw').classList.toggle('active', s === 'CHW');
 
-  const dtSelect = document.getElementById('deltaT');
-  const current = dtSelect.value;
-  dtSelect.innerHTML = '';
-  let options, defaultVal;
+  const dtEl = document.getElementById('deltaT');
+  const flowEl = document.getElementById('flowTemp');
+  const retEl = document.getElementById('returnTemp');
+  const meanEl = document.getElementById('meanTemp');
+
   if (s === 'LTHW') {
-    options = [10, 15, 20, 25, 30];
-    defaultVal = '20';
+    if (!dtEl.dataset.userSet) dtEl.value = 20;
+    if (!flowEl.dataset.userSet) flowEl.value = 80;
+    if (!retEl.dataset.userSet) retEl.value = 60;
+    meanEl.value = 70;
     document.getElementById('glycolWrap').style.display = 'none';
     document.getElementById('glycolNote').style.display = 'none';
   } else {
-    options = [5, 6, 7, 8, 10];
-    defaultVal = '6';
+    if (!dtEl.dataset.userSet) dtEl.value = 6;
+    if (!flowEl.dataset.userSet) flowEl.value = 6;
+    if (!retEl.dataset.userSet) retEl.value = 12;
+    meanEl.value = 10;
     document.getElementById('glycolWrap').style.display = '';
     document.getElementById('glycolNote').style.display = '';
   }
-  options.forEach(v => {
-    const opt = document.createElement('option');
-    opt.value = v;
-    opt.textContent = v + ' K';
-    if (String(v) === defaultVal) opt.selected = true;
-    dtSelect.appendChild(opt);
+
+  [dtEl, flowEl, retEl].forEach(el => {
+    el.addEventListener('input', () => { el.dataset.userSet = '1'; }, { once: true });
   });
-  if (options.map(String).includes(current)) {
-    dtSelect.value = current;
-  }
+
+  updateFromFlowReturn();
   saveSettings();
   recalc();
 }
@@ -748,18 +781,63 @@ function setMode(m) {
   recalc();
 }
 
-function getCapacityFactor() {
-  // kW per L/s  (scales linearly with ΔT)
-  const dt = parseFloat(document.getElementById('deltaT').value) || (system === 'LTHW' ? 20 : 6);
-  if (system === 'LTHW') {
-    // Base 81.95 at 20 K for pure water LTHW
-    return 81.95 * (dt / 20);
+function waterProps(T) {
+  // Approximate pure water properties 0–100 °C
+  const rho = 1000.0 * (1 - (T + 288.9414) / (508929.2 * (T + 68.12963)) * Math.pow(T - 3.9863, 2));
+  const cp = 4.217 - 0.0025 * (T - 20) + 0.00002 * Math.pow(T - 20, 2);
+  return { rho: Math.max(960, Math.min(1000, rho)), cp: Math.max(4.1, Math.min(4.25, cp)) };
+}
+
+let tempMode = 'std'; // 'std' or 'custom'
+
+function setTempMode(m) {
+  tempMode = m;
+  document.getElementById('tempModeStd').classList.toggle('active', m === 'std');
+  document.getElementById('tempModeCustom').classList.toggle('active', m === 'custom');
+  document.getElementById('stdTempWrap').style.display = m === 'std' ? '' : 'none';
+  document.getElementById('customTempWrap').style.display = m === 'custom' ? '' : 'none';
+  if (m === 'custom') updateFromFlowReturn();
+  saveSettings();
+  recalc();
+}
+
+function updateFromFlowReturn() {
+  const flow = parseFloat(document.getElementById('flowTemp').value) || 0;
+  const ret = parseFloat(document.getElementById('returnTemp').value) || 0;
+  const dt = Math.abs(flow - ret);
+  const mean = (flow + ret) / 2;
+  document.getElementById('derivedDelta').textContent = dt.toFixed(1);
+  document.getElementById('deltaT').value = dt.toFixed(1);
+  document.getElementById('meanTemp').value = mean.toFixed(1);
+  saveSettings();
+  recalc();
+}
+
+function getEffectiveTemps() {
+  if (tempMode === 'custom') {
+    const flow = parseFloat(document.getElementById('flowTemp').value) || 0;
+    const ret = parseFloat(document.getElementById('returnTemp').value) || 0;
+    return {
+      dt: Math.abs(flow - ret),
+      mean: (flow + ret) / 2
+    };
   }
-  // CHW
-  const g = parseInt(document.getElementById('glycol').value) || 0;
-  const base = 25.15; // pure water at ΔT=6
-  const der = GLYCOL_DERATE[g] || GLYCOL_DERATE[0];
-  return base * (dt / 6) * der.cap;
+  return {
+    dt: parseFloat(document.getElementById('deltaT').value) || (system === 'LTHW' ? 20 : 6),
+    mean: parseFloat(document.getElementById('meanTemp').value) || (system === 'LTHW' ? 70 : 10)
+  };
+}
+
+function getCapacityFactor() {
+  const { dt, mean } = getEffectiveTemps();
+  const props = waterProps(mean);
+  let factor = (props.rho * props.cp * dt) / 1000;
+  if (system === 'CHW') {
+    const g = parseInt(document.getElementById('glycol').value) || 0;
+    const der = GLYCOL_DERATE[g] || GLYCOL_DERATE[0];
+    factor *= der.cap;
+  }
+  return factor;
 }
 
 function getData() {
@@ -946,7 +1024,11 @@ function saveSettings() {
     const settings = {
       system,
       mode,
+      tempMode,
+      meanTemp: document.getElementById('meanTemp').value,
       deltaT: document.getElementById('deltaT').value,
+      flowTemp: document.getElementById('flowTemp').value,
+      returnTemp: document.getElementById('returnTemp').value,
       paTarget: document.getElementById('paTarget').value,
       glycol: document.getElementById('glycol').value,
       input: document.getElementById('mainInput').value,
@@ -966,9 +1048,14 @@ function loadSettings() {
       document.getElementById('themeBtn').textContent = s.theme === 'dark' ? '🌙' : '☀️';
     }
     if (s.system) setSystem(s.system);
+    if (s.tempMode) setTempMode(s.tempMode);
+    if (s.meanTemp) document.getElementById('meanTemp').value = s.meanTemp;
     if (s.deltaT) document.getElementById('deltaT').value = s.deltaT;
+    if (s.flowTemp) document.getElementById('flowTemp').value = s.flowTemp;
+    if (s.returnTemp) document.getElementById('returnTemp').value = s.returnTemp;
     if (s.paTarget) document.getElementById('paTarget').value = s.paTarget;
     if (s.glycol) document.getElementById('glycol').value = s.glycol;
+    updateFromFlowReturn();
     if (s.mode) setMode(s.mode);
     if (s.input) document.getElementById('mainInput').value = s.input;
     return true;

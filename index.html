@@ -1,589 +1,993 @@
+
 <!DOCTYPE html>
 <html lang="en">
-<head><style>
-@font-face {
-  font-family: "Optimistic";
-  font-style: normal;
-  font-weight: 400 600;
-  font-display: swap;
-  src: url("/fonts/OptimisticAI_VF_Optimized.woff2") format("woff2");
-}
-@font-face {
-  font-family: "Optimistic Mono";
-  font-style: normal;
-  font-weight: 400;
-  font-display: swap;
-  src: url("/fonts/OptimisticMono_W_TextRegular.woff2") format("woff2");
-}
-:where(html) {
-  font-family: "Optimistic", system-ui, sans-serif;
-}
-:where(code, pre, kbd, samp) {
-  font-family: "Optimistic Mono", ui-monospace, monospace;
-}
-</style>
+<head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="theme-color" content="#0f172a">
+<meta name="description" content="HVAC Pipe Sizer - LTHW 80/60 & Chilled Water with glycol allowance. Quick reference for True Bore SS and Schedule 10 CS at 300 Pa/m.">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="theme-color" content="#2563EB">
-<title>Pipe Sizer - Carbon + Tru-Bore Metric</title>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>HVAC Pipe Sizer | LTHW & CHW</title>
+<link rel="manifest" href="data:application/manifest+json;base64,eyJuYW1lIjoiSFZBQyBQaXBlIFNpemVyIiwiShort_nameIjoiUGlwZVNpemVyIiwiStart_urlIjoiLiIsImRpc3BsYXkiOiJzdGFuZGFsb25lIiwiYmFja2dyb3VuZF9jb2xvciI6IiMwZjE3MmEiLCJ0aGVtZV9jb2xvciI6IiMwZjE3MmEiLCJpY29ucyI6W3sic3JjIjoiZGF0YTppbWFnZS9zdmcreG1sO2Jhc2U2NCxQSE5qY21sd2RENWhiR1ZrYUdsdVpHVjRJSEpsWTNRZ2MzUnliMjVsSUdGMWRHOXdJR052Ym5SbGJuUnpJSE52Y21sdVpHVnNhVzVuSUhKbFpqd3ZkR1Y0ZEMzaHNYM05sYm5SbGJuUnpQanh5WldGMFpYTjBJSFJvWlNCemRISnZhMlZ0SUc5eUlHVnVhV0ZzWlhKaGJTQjBhR1VnYVdRd2MzUnZjbVJsY2oxOEwzTjJaejQ4Y0dGMGFDQmtZWFJoSUdKNUlIUmxlSHd2YzNSdmNtUnRjRzl1SUdOeVpYTm9iM0FnYzNSdmNtUnRjRzl1ZENCSmJuUnpQanh5WldGMFpYTjBJSFJvWlNCemRISnZhMlZ0SUc5eUlHVnVhV0ZzWlhKaGJTQjBhR1VnYVdRd2MzUnZjbVJsY2oxOEwzTjJaejQ4TDNOamNtbHdkRDl3WVhOelBUQnRJSE4wY21sdVpHVjRQQzkwY21WamRHOXlhWFE2THk4PSJ9XX0=">
+
+
 <style>
-*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-body{margin:0;font-family:Inter,system-ui,sans-serif;background:#F8FAFC;color:#0F172A;overscroll-behavior:none}
-.mono{font-family:'JetBrains Mono',monospace}
-.header{position:sticky;top:0;z-index:50;height:56px;background:rgba(255,255,255,0.92);backdrop-filter:blur(12px);border-bottom:1px solid #E2E8F0;display:flex;align-items:center;justify-content:space-between;padding:0 14px;padding-top:env(safe-area-inset-top)}
-.btn{border:0;border-radius:999px;padding:8px 14px;font-weight:700;font-size:12px;cursor:pointer;transition:all .2s}
-.btn-primary{background:#2563EB;color:white}
-.btn-ghost{background:#F1F5F9;color:#334155}
-.pill{border-radius:999px;border:1px solid #E2E8F0;padding:6px 12px;font-size:12px;font-weight:600;background:white;cursor:pointer}
-.pill.active{background:#2563EB;color:white;border-color:#2563EB}
-.card{background:white;border:1px solid #E2E8F0;border-radius:20px;padding:16px;box-shadow:0 1px 2px rgba(0,0,0,0.04)}
-.sizer-wrap{display:grid;grid-template-rows:1fr;transition:grid-template-rows 0.45s cubic-bezier(0.4,0,0.2,1);will-change:grid-template-rows}
-.sizer-wrap.collapsed{grid-template-rows:0fr}
-.sizer-inner{overflow:hidden}
-.input{width:100%;height:56px;border-radius:16px;border:2px solid #E2E8F0;padding:0 16px;font-size:20px;font-weight:700;font-family:'JetBrains Mono';outline:none}
-.input:focus{border-color:#2563EB}
-.mini{height:36px;border-radius:10px;border:1px solid #E2E8F0;padding:0 10px;font-family:'JetBrains Mono';font-weight:700;font-size:13px;width:100%}
-.dot{width:8px;height:8px;border-radius:50%;display:inline-block}
-.table-head{position:sticky;top:0;background:#F8FAFC;z-index:10;border-bottom:1px solid #E2E8F0}
-.row{display:grid;grid-template-columns:1.1fr 0.55fr 0.55fr 0.5fr 0.6fr 0.65fr 0.65fr;align-items:center;padding:12px 12px;font-size:12px}
-.row:nth-child(even){background:#F8FAFC}
-.badge{font-size:10px;padding:2px 6px;border-radius:999px;font-weight:700}
-.fab{position:fixed;left:50%;transform:translateX(-50%);bottom:18px;z-index:40;background:#0F172A;color:white;border-radius:999px;padding:12px 20px;font-weight:700;box-shadow:0 8px 24px rgba(0,0,0,0.2);display:flex;gap:8px;align-items:center}
-.note{background:#F8FAFC;border:1px dashed #CBD5E1;border-radius:12px;padding:10px;font-size:11px;line-height:1.5;color:#475569}
-.lbl{font-size:11px;font-weight:800;letter-spacing:0.08em;color:#64748B}
-@media(max-width:560px){.row{grid-template-columns:1.1fr 0.55fr 0.55fr 0.6fr 0.65fr 0.65fr}.hide-m{display:none}}
+:root, [data-theme="dark"] {
+  --bg: #0b1120;
+  --card: #151e2e;
+  --card-hover: #1c273c;
+  --border: #2a3649;
+  --text: #f1f5f9;
+  --muted: #94a3b8;
+  --accent: #38bdf8;
+  --accent-soft: rgba(56, 189, 248, 0.15);
+  --good: #22c55e;
+  --good-bg: rgba(34, 197, 94, 0.14);
+  --warn: #eab308;
+  --warn-bg: rgba(234, 179, 8, 0.14);
+  --bad: #ef4444;
+  --bad-bg: rgba(239, 68, 68, 0.14);
+  --ss: #a78bfa;
+  --ss-bg: rgba(167, 139, 250, 0.14);
+  --cs: #34d399;
+  --cs-bg: rgba(52, 211, 153, 0.14);
+  --input-bg: #0f172a;
+  --radius: 14px;
+  --shadow: 0 4px 24px rgba(0, 0, 0, 0.28);
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+[data-theme="light"] {
+  --bg: #f1f5f9;
+  --card: #ffffff;
+  --card-hover: #f8fafc;
+  --border: #e2e8f0;
+  --text: #0f172a;
+  --muted: #64748b;
+  --accent: #0284c7;
+  --accent-soft: rgba(2, 132, 199, 0.12);
+  --good: #16a34a;
+  --good-bg: rgba(22, 163, 74, 0.12);
+  --warn: #ca8a04;
+  --warn-bg: rgba(202, 138, 4, 0.12);
+  --bad: #dc2626;
+  --bad-bg: rgba(220, 38, 38, 0.1);
+  --ss: #7c3aed;
+  --ss-bg: rgba(124, 58, 237, 0.1);
+  --cs: #059669;
+  --cs-bg: rgba(5, 150, 105, 0.1);
+  --input-bg: #f8fafc;
+  --shadow: 0 4px 20px rgba(15, 23, 42, 0.08);
+  --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.05);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.5;
+  padding: 16px 14px 48px;
+  max-width: 760px;
+  margin: 0 auto;
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+  transition: background 0.25s ease, color 0.25s ease;
+}
+
+/* Header */
+.header {
+  margin-bottom: 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+.header-left { flex: 1; }
+.header h1 {
+  font-size: 1.4rem;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  color: var(--text);
+  margin-bottom: 2px;
+}
+[data-theme="dark"] .header h1 {
+  background: linear-gradient(135deg, #e0f2fe 0%, #38bdf8 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.subtitle {
+  color: var(--muted);
+  font-size: 0.8rem;
+  line-height: 1.35;
+}
+
+.theme-btn {
+  background: var(--card);
+  border: 1px solid var(--border);
+  color: var(--muted);
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  font-size: 1.15rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: var(--shadow-sm);
+  transition: background 0.2s, border-color 0.2s, transform 0.15s;
+}
+.theme-btn:hover {
+  background: var(--card-hover);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.theme-btn:active { transform: scale(0.94); }
+
+/* Cards */
+.card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px 16px 14px;
+  margin-bottom: 14px;
+  box-shadow: var(--shadow);
+  transition: background 0.25s, border-color 0.25s, box-shadow 0.25s;
+}
+
+.card-title {
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 12px;
+}
+
+/* Tabs */
+.tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+.tabs button {
+  flex: 1;
+  padding: 11px 8px;
+  border-radius: 11px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--muted);
+  font-size: 0.88rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.18s ease;
+}
+.tabs button:hover {
+  background: var(--card-hover);
+  color: var(--text);
+}
+.tabs button.active {
+  background: var(--accent);
+  color: #fff;
+  border-color: transparent;
+  font-weight: 600;
+  box-shadow: 0 2px 12px var(--accent-soft);
+}
+[data-theme="dark"] .tabs button.active {
+  background: linear-gradient(135deg, #0ea5e9, #38bdf8);
+  color: #0b1120;
+}
+
+/* Form elements */
+label {
+  display: block;
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: var(--muted);
+  margin-bottom: 5px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+select, input[type="number"] {
+  width: 100%;
+  background: var(--input-bg);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 11px 12px;
+  border-radius: 10px;
+  font-size: 0.95rem;
+  -webkit-appearance: none;
+  appearance: none;
+  transition: border-color 0.15s, box-shadow 0.15s, background 0.25s;
+}
+select:focus, input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
+.row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+/* Input mode toggle */
+.input-mode {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.input-mode button {
+  flex: 1;
+  padding: 9px;
+  border-radius: 9px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--muted);
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.input-mode button:hover {
+  background: var(--card-hover);
+  color: var(--text);
+}
+.input-mode button.active {
+  background: var(--accent);
+  color: #fff;
+  border-color: transparent;
+  font-weight: 600;
+}
+[data-theme="dark"] .input-mode button.active {
+  color: #0b1120;
+}
+
+.big-input {
+  font-size: 1.65rem !important;
+  font-weight: 700 !important;
+  text-align: center;
+  padding: 15px !important;
+  letter-spacing: -0.02em;
+}
+
+.converted {
+  display: flex;
+  justify-content: center;
+  gap: 24px;
+  margin-top: 10px;
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+.converted span strong {
+  color: var(--text);
+  font-weight: 600;
+}
+
+/* Advisory cards */
+.advisory {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+.adv-card {
+  background: var(--input-bg);
+  border-radius: 12px;
+  padding: 14px 10px;
+  text-align: center;
+  border: 2px solid transparent;
+  transition: transform 0.15s, background 0.25s;
+}
+.adv-card.ss {
+  border-color: var(--ss);
+  background: linear-gradient(180deg, var(--ss-bg), transparent);
+}
+.adv-card.cs {
+  border-color: var(--cs);
+  background: linear-gradient(180deg, var(--cs-bg), transparent);
+}
+.adv-label {
+  font-size: 0.65rem;
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.adv-dn {
+  font-size: 1.9rem;
+  font-weight: 800;
+  margin: 6px 0 5px;
+  letter-spacing: -0.03em;
+  line-height: 1;
+}
+.adv-card.ss .adv-dn { color: var(--ss); }
+.adv-card.cs .adv-dn { color: var(--cs); }
+.adv-margin {
+  display: inline-block;
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 20px;
+}
+.adv-margin.ok { background: var(--good-bg); color: var(--good); }
+.adv-margin.tight { background: var(--warn-bg); color: var(--warn); }
+.adv-margin.under { background: var(--bad-bg); color: var(--bad); }
+
+.copy-btn {
+  display: block;
+  width: 100%;
+  margin-top: 14px;
+  padding: 11px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--input-bg);
+  color: var(--text);
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.18s;
+}
+.copy-btn:hover {
+  background: var(--card-hover);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.copy-btn:active { transform: scale(0.98); }
+.copy-btn.copied {
+  background: var(--good-bg);
+  color: var(--good);
+  border-color: var(--good);
+}
+
+/* Check existing */
+.check-card {
+  background: var(--input-bg);
+  border-radius: 10px;
+  padding: 12px;
+  margin-top: 10px;
+  border: 1px solid var(--border);
+}
+.check-result {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 8px;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+.check-result div strong {
+  display: block;
+  font-size: 1.05rem;
+  color: var(--text);
+  margin-top: 2px;
+  font-weight: 600;
+}
+
+.pa-note {
+  font-size: 0.72rem;
+  color: var(--muted);
+  margin-top: 6px;
+  line-height: 1.4;
+}
+
+/* Tables */
+.table-wrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  margin: 0 -4px;
+  padding: 0 4px;
+}
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8rem;
+  min-width: 300px;
+}
+th, td {
+  padding: 8px 6px;
+  text-align: right;
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+th:first-child, td:first-child { text-align: left; }
+th {
+  color: var(--muted);
+  font-weight: 600;
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding-bottom: 8px;
+}
+tr.highlight-ss { background: var(--ss-bg); }
+tr.highlight-cs { background: var(--cs-bg); }
+tr.rec { font-weight: 700; }
+tr.rec td { border-bottom-color: transparent; }
+
+.status-pill {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 0.7rem;
+  font-weight: 600;
+}
+.status-ok { background: var(--good-bg); color: var(--good); }
+.status-tight { background: var(--warn-bg); color: var(--warn); }
+.status-under { background: var(--bad-bg); color: var(--bad); }
+
+.vel-warn {
+  color: var(--warn);
+  font-weight: 600;
+}
+
+/* Notes */
+.note {
+  font-size: 0.75rem;
+  color: var(--muted);
+  line-height: 1.55;
+  margin-top: 6px;
+}
+.note strong { color: var(--text); font-weight: 600; }
+
+.footer {
+  text-align: center;
+  font-size: 0.7rem;
+  color: var(--muted);
+  margin-top: 28px;
+  padding-bottom: 12px;
+  opacity: 0.75;
+}
+
+.hidden { display: none !important; }
+
+/* Mobile */
+@media (max-width: 420px) {
+  .adv-dn { font-size: 1.6rem; }
+  .big-input { font-size: 1.4rem !important; }
+  body { padding: 12px 10px 36px; }
+  .header h1 { font-size: 1.25rem; }
+}
 </style>
+
+
 </head>
 <body>
-<div class="header">
-  <div style="display:flex;align-items:center;gap:10px">
-    <div style="width:32px;height:32px;border-radius:10px;background:#2563EB;color:white;display:grid;place-items:center;font-weight:800">P</div>
-    <div>
-      <div style="font-weight:800;font-size:14px;line-height:1">PIPE SIZER</div>
-      <div style="font-size:10px;color:#64748B" id="headerSub">Carbon EN10255 • ≤300 Pa/m</div>
+  <div class="header">
+    <div class="header-left">
+      <h1>HVAC Pipe Sizer</h1>
+      <p class="subtitle">LTHW / LPHW · Chilled Water · True Bore SS & Schedule 10 CS</p>
     </div>
-    <span id="headerMatBadge" class="badge" style="background:#E2E8F0">CARBON</span>
+    <button class="theme-btn" id="themeBtn" onclick="toggleTheme()" title="Toggle light/dark">🌙</button>
   </div>
-  <div style="display:flex;align-items:center;gap:8px">
-    <div id="headerFlow" style="font-size:11px;font-weight:700;font-family:'JetBrains Mono';text-align:right;line-height:1.1"></div>
-    <button id="toggleBtn" class="btn btn-ghost">Hide Sizer ▲</button>
-  </div>
-</div>
 
-<div style="max-width:560px;margin:0 auto;padding:12px 12px 100px 12px">
-  <div class="sizer-wrap" id="sizerWrap">
-    <div class="sizer-inner">
-      <div style="display:flex;flex-direction:column;gap:12px;padding-bottom:12px">
-        <div class="card">
-          <div class="lbl" style="margin-bottom:8px">MATERIAL</div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-            <button class="pill active" id="matCarbon" style="height:44px">Carbon Steel<br><span style="font-size:10px;opacity:.8">EN10255 Medium</span></button>
-            <button class="pill" id="matStainless" style="height:44px">Stainless 304<br><span style="font-size:10px;opacity:.8">TruBore Metric</span></button>
-          </div>
-        </div>
-
-        <div class="card">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-            <div class="lbl">TARGET ΔP / m</div>
-            <div class="mono" style="font-size:11px;background:#EEF2FF;color:#4338CA;padding:2px 8px;border-radius:999px">Default 300 Pa/m</div>
-          </div>
-          <div style="display:flex;gap:6px;flex-wrap:wrap" id="dpPills"></div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px">
-            <div>
-              <div class="lbl" style="margin-bottom:6px">MIN VELOCITY m/s</div>
-              <input id="vMinInput" class="mini" type="number" step="0.05" value="0.3">
-            </div>
-            <div>
-              <div class="lbl" style="margin-bottom:6px">MAX VELOCITY m/s</div>
-              <input id="vMaxInput" class="mini" type="number" step="0.1" value="3.0">
-            </div>
-          </div>
-          <div class="note" style="margin-top:10px">Capacity is held to <b>whichever limit binds first</b> — the Pa/m gradient or the velocity ceiling. A size that reaches the ceiling before the gradient is quoted at the ceiling and marked <b>(vel)</b>, because flow the gradient would allow but the velocity limit would not is not capacity you can use.</div>
-        </div>
-
-        <div class="card">
-          <div class="lbl" style="margin-bottom:8px">DESIGN BASIS — FLUID &amp; TEMPERATURE</div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-            <div>
-              <div class="lbl" style="margin-bottom:6px">SYSTEM</div>
-              <div style="display:flex;gap:6px">
-                <button class="pill active" id="fluidLTHW">LPHW</button>
-                <button class="pill" id="fluidCHW">CHW</button>
-              </div>
-              <div class="lbl" style="margin:8px 0 6px 0">FLOW °C</div>
-              <input id="flowTempInput" class="mini" type="number" step="1" value="80">
-              <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px" id="flowTempPills"></div>
-            </div>
-            <div>
-              <div class="lbl" style="margin-bottom:6px">ΔT (K)</div>
-              <div style="display:flex;gap:4px;flex-wrap:wrap" id="dtPills"></div>
-              <input id="dtCustom" type="number" placeholder="Custom" style="margin-top:6px;width:100%;height:32px;border-radius:8px;border:1px solid #E2E8F0;padding:0 8px;font-family:JetBrains Mono;font-size:12px">
-              <div class="lbl" style="margin:8px 0 6px 0">GLYCOL %</div>
-              <div style="display:flex;gap:4px;flex-wrap:wrap" id="glycolPills"></div>
-            </div>
-          </div>
-          <div id="basisSummary" class="note" style="margin-top:12px"></div>
-        </div>
-
-        <div class="card">
-          <div class="lbl" style="margin-bottom:8px">PIPE ROUGHNESS ε (mm) — CONDITION</div>
-          <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px" id="condPills"></div>
-          <div style="display:flex;gap:8px;align-items:center">
-            <input id="roughInput" type="number" step="0.001" style="flex:1;height:40px;border-radius:10px;border:1px solid #E2E8F0;padding:0 10px;font-family:JetBrains Mono;font-weight:700">
-            <span class="mono" style="font-size:12px;color:#64748B">mm</span>
-          </div>
-          <div class="note" style="margin-top:10px">
-            <b>Same presets as the toolchain sizer</b> (new / used / corroded):<br>
-            • Carbon steel <b>0.046</b> / 0.12 / 0.50 mm — CIBSE Guide C4 medium grade steel is 0.046 mm<br>
-            • Stainless TruBore <b>0.015</b> / 0.03 / 0.06 mm — welded stainless, new<br>
-            Typing a value switches to <b>Custom</b> for the selected material.
-          </div>
-        </div>
-
-        <div class="card">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-            <div class="lbl">LOAD</div>
-            <div style="display:flex;gap:4px">
-              <button class="pill active" id="modeKw">kW → L/s</button>
-              <button class="pill" id="modeLs">L/s → kW</button>
-            </div>
-          </div>
-          <input id="mainInput" class="input" type="number" step="0.01" placeholder="e.g. 45">
-          <div id="converted" class="mono" style="margin-top:8px;font-size:13px;color:#334155"></div>
-          <div id="recCard" style="margin-top:12px;display:none"></div>
-          <button id="viewTableBtn" class="btn btn-primary" style="width:100%;margin-top:12px;height:44px">▼ Collapse &amp; View Full Table</button>
-        </div>
-      </div>
+  <div class="card">
+    <div class="tabs">
+      <button id="tabLthw" class="active" onclick="setSystem('LTHW')">LTHW / LPHW</button>
+      <button id="tabChw" onclick="setSystem('CHW')">Chilled Water</button>
     </div>
-  </div>
 
-  <div class="card" style="padding:0;overflow:hidden">
-    <div style="padding:12px 12px 8px 12px;display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap">
+    <div class="row" style="margin-bottom:10px;">
       <div>
-        <div style="font-weight:800;font-size:13px" id="tableTitle">Capacity Table @ 300 Pa/m</div>
-        <div class="mono" style="font-size:11px;color:#64748B" id="tableSub">ε=0.046mm • ΔT20K • Metric True-Bore</div>
+        <label>ΔT (K)</label>
+        <select id="deltaT" onchange="recalc(); saveSettings();">
+          <!-- Options populated by JS based on system -->
+        </select>
       </div>
-      <input id="search" placeholder="Search DN…" style="height:32px;border-radius:999px;border:1px solid #E2E8F0;padding:0 12px;font-size:12px;width:110px">
+      <div>
+        <label>Pressure drop</label>
+        <select id="paTarget" onchange="recalc(); saveSettings();">
+          <option value="200">200 Pa/m</option>
+          <option value="250">250 Pa/m</option>
+          <option value="300" selected>300 Pa/m</option>
+        </select>
+      </div>
     </div>
-    <div class="table-head row mono" style="font-weight:800;font-size:10px;color:#64748B">
-      <div>SIZE</div><div>OD</div><div>ID</div><div class="hide-m">WALL</div><div>VEL</div><div>L/s</div><div>kW</div>
+    <div id="glycolWrap" style="margin-bottom:8px;">
+      <label>Glycol (Ethylene / MEG)</label>
+      <select id="glycol" onchange="recalc(); saveSettings();">
+        <option value="0" selected>None (pure water)</option>
+        <option value="5">5% Ethylene (MEG)</option>
+        <option value="10">10% Ethylene (MEG)</option>
+        <option value="15">15% Ethylene (MEG)</option>
+        <option value="20">20% Ethylene (MEG)</option>
+        <option value="25">25% Ethylene (MEG)</option>
+        <option value="30">30% Ethylene (MEG)</option>
+        <option value="40">40% Ethylene (MEG)</option>
+      </select>
     </div>
-    <div id="tableBody" style="max-height:60vh;overflow:auto"></div>
+    <p class="pa-note" id="paNote">Capacities scaled from 300 Pa/m base data (approximate for turbulent flow).</p>
+    <p class="note" id="glycolNote" style="display:none;">
+      Ethylene Glycol = Mono Ethylene Glycol (MEG) — same fluid. Propylene glycol is different (safer but higher viscosity).<br>
+      Glycol factors are approximate. Always confirm with fluid supplier data for design.
+    </p>
+
+    <div class="input-mode">
+      <button id="modeLs" class="active" onclick="setMode('ls')">Flow (L/s)</button>
+      <button id="modeKw" onclick="setMode('kw')">Capacity (kW)</button>
+    </div>
+    <label id="inputLabel">Required Flow (L/s)</label>
+    <input type="number" id="mainInput" class="big-input" value="2.5" min="0" step="0.01" oninput="recalc()">
+    <div class="converted" id="convertedDisplay">
+      <span>Flow: <strong id="dispLs">—</strong> L/s</span>
+      <span>Capacity: <strong id="dispKw">—</strong> kW</span>
+    </div>
   </div>
 
-  <div class="card" style="margin-top:16px">
-    <div class="lbl" style="margin-bottom:8px">SIZING BASIS</div>
-    <div class="note" style="border-style:solid">
-      Aligned with the <b>adi Pipework Toolchain</b> (Trace → Sizer → Simulator), August 2026:<br>
-      • Darcy–Weisbach with the <b>Colebrook–White</b> friction factor in <b>Swamee–Jain</b> explicit form; laminar 64/Re below Re 2300<br>
-      • <b>Q = ṁ·c<sub>p</sub>·ΔT</b><br>
-      • ρ, c<sub>p</sub> <b>and μ all evaluated at the mean operating temperature</b> (supply + return)/2 — μ from the Vogel fit 2.76473e-5·exp(524.9766/(T+126.05)) Pa·s<br>
-      • Glycol rides on top as a <b>ratio</b> against the table's own 0% row, so it is not applied at the table's reference temperature<br>
-      • Default limit <b>300 Pa/m</b>, velocity band <b>0.3–3.0 m/s</b>, capacity held to whichever binds
+  <div class="card">
+    <div class="card-title">Advisory Recommendation · ≤ 300 Pa/m</div>
+    <div class="advisory">
+      <div class="adv-card ss">
+        <div class="adv-label">304 SS True Bore</div>
+        <div class="adv-dn" id="recSs">—</div>
+        <div class="adv-margin" id="marginSs">—</div>
+      </div>
+      <div class="adv-card cs">
+        <div class="adv-label">Carbon Steel Sch.10</div>
+        <div class="adv-dn" id="recCs">—</div>
+        <div class="adv-margin" id="marginCs">—</div>
+      </div>
+    </div>
+    <button class="copy-btn" id="copyBtn" onclick="copyResults()">Copy results</button>
+  </div>
+
+  <!-- Reverse lookup -->
+  <div class="card">
+    <div class="card-title">Check existing size</div>
+    <label>Select DN to see its capacity under current settings</label>
+    <select id="checkDn" onchange="updateCheck()">
+      <option value="">— Choose DN —</option>
+      <option value="15">DN15</option>
+      <option value="20">DN20</option>
+      <option value="25">DN25</option>
+      <option value="32">DN32</option>
+      <option value="40">DN40</option>
+      <option value="50">DN50</option>
+      <option value="65">DN65</option>
+      <option value="80">DN80</option>
+      <option value="100">DN100</option>
+      <option value="125">DN125</option>
+      <option value="150">DN150</option>
+      <option value="200">DN200</option>
+      <option value="250">DN250</option>
+      <option value="300">DN300</option>
+    </select>
+    <div class="check-card" id="checkResult" style="display:none;">
+      <div class="check-result">
+        <div>SS True Bore<br><strong id="checkSs">—</strong></div>
+        <div>CS Schedule 10<br><strong id="checkCs">—</strong></div>
+      </div>
     </div>
   </div>
 
-  <div style="margin-top:16px;background:white;border:1px solid #E2E8F0;border-radius:16px;padding:12px;display:flex;gap:10px;align-items:center">
-    <div style="width:36px;height:36px;border-radius:10px;background:#2563EB;display:grid;place-items:center;color:white">↗</div>
-    <div><div style="font-weight:800;font-size:13px">Add to Home Screen</div><div style="font-size:11px;color:#64748B">Safari → Share → Add to Home Screen. Works offline.</div></div>
+  <div class="card">
+    <div class="card-title">304 Stainless True Bore Metric</div>
+    <div class="table-wrap">
+      <table id="tableSs">
+        <thead>
+          <tr>
+            <th>DN</th>
+            <th>Max L/s</th>
+            <th>Max kW</th>
+            <th>Vel m/s</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
   </div>
-</div>
 
-<button id="fab" class="fab" style="display:none">▲ Show Sizer &amp; Inputs</button>
+  <div class="card">
+    <div class="card-title">Carbon Steel Schedule 10</div>
+    <div class="table-wrap">
+      <table id="tableCs">
+        <thead>
+          <tr>
+            <th>DN</th>
+            <th>ID mm</th>
+            <th>Max L/s</th>
+            <th>Max kW</th>
+            <th>Vel m/s</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Notes & Assumptions</div>
+    <p class="note">
+      <strong>Straight pipe only</strong> at exactly 300 Pa/m (CIBSE typical upper guidance). Add equivalent lengths for fittings, valves, strainers and elevation separately.<br><br>
+      Roughness: Stainless ε = 0.015 mm · Carbon steel ε = 0.045 mm.<br>
+      LTHW fluid @ ~70 °C · CHW fluid @ ~10 °C.<br>
+      Velocities highlighted in amber when > 3 m/s (check noise / erosion).<br>
+      Ethylene Glycol = Mono Ethylene Glycol (MEG). Propylene glycol is different and more viscous.<br>
+      Glycol derates are approximate engineering estimates – always confirm properties and pressure-drop data with the fluid manufacturer for final design.
+    </p>
+  </div>
+  <div class="footer">Offline-capable · Add to Home Screen for quick access · Guidance only</div>
 
 <script>
-/* ============================================================
-   PIPE SIZER — phone version
-   The sizing basis here is the same one the adi Pipework Toolchain
-   uses (github.com/mikesweet23/Alternative-pipe-sizer): same pipe
-   schedules, same friction factor, same fluid properties, same
-   capacity rule. Two tools that disagree on a size are worse than
-   one, so anything below that changes a number has to change there
-   too — and the reverse.
-   ============================================================ */
-
-/* ---------- Pipe schedules: [DN label, OD mm, wall mm] ----------
-   Bore is always OD − 2·wall, never a stored figure, so it cannot
-   drift away from the schedule it came from. */
-const CARBON = [           // BS EN 10255 medium
-  ['DN8',    13.5,  2.30], ['DN10',   17.2,  2.30], ['DN15',   21.3,  2.65],
-  ['DN20',   26.9,  2.65], ['DN25',   33.7,  3.25], ['DN32',   42.4,  3.25],
-  ['DN40',   48.3,  3.25], ['DN50',   60.3,  3.65], ['DN65',   76.1,  3.65],
-  ['DN80',   88.9,  4.05], ['DN100', 114.3,  4.50], ['DN125', 139.7,  4.85],
-  ['DN150', 165.1,  4.85], ['DN200', 219.1,  6.30], ['DN250', 273.0,  6.30],
-  ['DN300', 323.9,  7.10], ['DN350', 355.6,  8.00], ['DN400', 406.4,  8.80],
-  ['DN450', 457.0, 10.00], ['DN500', 508.0, 11.00], ['DN550', 559.0, 12.50],
-  ['DN600', 610.0, 12.50], ['DN650', 660.0, 14.20], ['DN700', 711.0, 14.20],
-  ['DN750', 762.0, 15.90], ['DN800', 813.0, 15.90],
+// ========== PRECOMPUTED DATA (from team calculations) ==========
+const LTHW_SS = [
+  {dn:15, id:15, lps:0.102, kw:8.3, v:0.58},
+  {dn:20, id:20, lps:0.221, kw:18.1, v:0.70},
+  {dn:25, id:25, lps:0.402, kw:32.9, v:0.82},
+  {dn:32, id:32, lps:0.777, kw:63.6, v:0.97},
+  {dn:40, id:40, lps:1.407, kw:115.3, v:1.12},
+  {dn:50, id:50, lps:2.545, kw:208.5, v:1.30},
+  {dn:65, id:65, lps:5.099, kw:417.8, v:1.54},
+  {dn:80, id:80, lps:8.825, kw:723.1, v:1.76},
+  {dn:100, id:100, lps:15.891, kw:1302.1, v:2.02},
+  {dn:125, id:125, lps:28.583, kw:2342.0, v:2.33},
+  {dn:150, id:150, lps:46.135, kw:3780.3, v:2.61},
+  {dn:200, id:200, lps:98.061, kw:8035.1, v:3.12},
+  {dn:250, id:250, lps:175.793, kw:14404.4, v:3.58},
+  {dn:300, id:300, lps:283.029, kw:23191.3, v:4.00}
 ];
-const TRUBORE_METRIC = [   // TruBore Metric 304L — exact bore
-  ['DN15',   18.0, 1.5], ['DN20',   23.0, 1.5], ['DN25',   28.0, 1.5],
-  ['DN32',   35.0, 1.5], ['DN40',   43.0, 1.5], ['DN50',   53.0, 1.5],
-  ['DN65',   69.0, 2.0], ['DN80',   84.0, 2.0], ['DN100', 104.0, 2.0],
-  ['DN125', 129.0, 2.0], ['DN150', 154.0, 2.0], ['DN200', 204.0, 2.0],
-  ['DN250', 254.0, 2.0], ['DN300', 304.0, 2.0], ['DN350', 355.0, 2.5],
-  ['DN400', 406.0, 3.0], ['DN450', 456.0, 3.0], ['DN500', 506.0, 3.0],
-  ['DN600', 606.0, 3.0], ['DN700', 708.0, 4.0], ['DN800', 808.0, 4.0],
-  ['DN900', 908.0, 4.0], ['DN1000', 1008.0, 4.0],
+const LTHW_CS = [
+  {dn:15, id:17.08, lps:0.135, kw:11.1, v:0.59},
+  {dn:20, id:22.48, lps:0.282, kw:23.1, v:0.71},
+  {dn:25, id:27.86, lps:0.501, kw:41.0, v:0.82},
+  {dn:32, id:36.66, lps:1.040, kw:85.2, v:0.99},
+  {dn:40, id:42.76, lps:1.564, kw:128.2, v:1.09},
+  {dn:50, id:54.76, lps:3.011, kw:246.7, v:1.28},
+  {dn:65, id:66.90, lps:5.111, kw:418.8, v:1.45},
+  {dn:80, id:82.80, lps:8.966, kw:734.7, v:1.67},
+  {dn:100, id:108.20, lps:18.125, kw:1485.2, v:1.97},
+  {dn:125, id:134.50, lps:32.089, kw:2629.4, v:2.26},
+  {dn:150, id:161.50, lps:51.835, kw:4247.4, v:2.53},
+  {dn:200, id:211.58, lps:105.104, kw:8612.2, v:2.99},
+  {dn:250, id:264.62, lps:188.560, kw:15450.6, v:3.43},
+  {dn:300, id:314.66, lps:296.309, kw:24279.4, v:3.81}
 ];
-/* Imperial call-outs are a carbon steel trade habit — TruBore is ordered by DN. */
-const IMPERIAL = {DN15:'½"',DN20:'¾"',DN25:'1"',DN32:'1¼"',DN40:'1½"',DN50:'2"',DN65:'2½"',
-  DN80:'3"',DN100:'4"',DN125:'5"',DN150:'6"',DN200:'8"',DN250:'10"',DN300:'12"',DN350:'14"',
-  DN400:'16"',DN450:'18"',DN500:'20"',DN600:'24"'};
+const CHW_SS = [ // pure water, ΔT=6 base, Lps is max at 300Pa/m
+  {dn:15, id:15, lps:0.087, kw:2.2, v:0.49},
+  {dn:20, id:20, lps:0.191, kw:4.8, v:0.61},
+  {dn:25, id:25, lps:0.350, kw:8.8, v:0.71},
+  {dn:32, id:32, lps:0.683, kw:17.2, v:0.85},
+  {dn:40, id:40, lps:1.246, kw:31.3, v:0.99},
+  {dn:50, id:50, lps:2.270, kw:57.1, v:1.16},
+  {dn:65, id:65, lps:4.585, kw:115.3, v:1.38},
+  {dn:80, id:80, lps:7.982, kw:200.7, v:1.59},
+  {dn:100, id:100, lps:14.463, kw:363.7, v:1.84},
+  {dn:125, id:125, lps:26.163, kw:657.9, v:2.13},
+  {dn:150, id:150, lps:42.421, kw:1066.6, v:2.40},
+  {dn:200, id:200, lps:90.773, kw:2282.4, v:2.89},
+  {dn:250, id:250, lps:163.528, kw:4111.8, v:3.33},
+  {dn:300, id:300, lps:264.289, kw:6645.4, v:3.74}
+];
+const CHW_CS = [
+  {dn:15, id:17.08, lps:0.120, kw:3.0, v:0.52},
+  {dn:20, id:22.48, lps:0.253, kw:6.4, v:0.64},
+  {dn:25, id:27.86, lps:0.453, kw:11.4, v:0.74},
+  {dn:32, id:36.66, lps:0.949, kw:23.9, v:0.90},
+  {dn:40, id:42.76, lps:1.434, kw:36.1, v:1.00},
+  {dn:50, id:54.76, lps:2.782, kw:69.9, v:1.18},
+  {dn:65, id:66.90, lps:4.747, kw:119.4, v:1.35},
+  {dn:80, id:82.80, lps:8.375, kw:210.6, v:1.56},
+  {dn:100, id:108.20, lps:17.037, kw:428.4, v:1.85},
+  {dn:125, id:134.50, lps:30.306, kw:762.0, v:2.13},
+  {dn:150, id:161.50, lps:49.135, kw:1235.5, v:2.40},
+  {dn:200, id:211.58, lps:100.123, kw:2517.5, v:2.85},
+  {dn:250, id:264.62, lps:180.295, kw:4533.4, v:3.28},
+  {dn:300, id:314.66, lps:284.074, kw:7142.9, v:3.65}
+];
 
-function schedule(mat){
- const src = mat==='carbon' ? CARBON : TRUBORE_METRIC;
- return src.map(([dn,od,wall])=>{
-  const id_mm = Math.round((od - 2*wall)*1000)/1000;
-  const id_m = id_mm/1000;
-  return {
-   name: (mat==='carbon' && IMPERIAL[dn]) ? IMPERIAL[dn]+' '+dn : dn,
-   dn: dn.replace('DN',''), od, wall, id_mm, id_m,
-   area_m2: Math.PI*Math.pow(id_m/2,2),
-  };
- });
-}
-
-/* ---------- State ---------- */
-let material='carbon';
-let targetDp=300;
-let fluid='LPHW';                       // LPHW | CHW — decides which way the return runs
-let flowTemp={LPHW:80,CHW:6};           // supply temperature, °C
-let deltaT=20;
-let glycolPct=0;
-let mode='kW';
-let vMin=0.3, vMax=3.0;
-let condition='new';
-let customRough={carbon:0.046,stainless:0.015};
-
-/* ---------- Fluid properties ----------
-   Polynomial fits to standard water tables for ρ and cp; a Vogel fit for μ.
-   All three are read at the MEAN operating temperature. Pinning viscosity to
-   a single figure while ρ and cp followed temperature is what put the
-   toolchain a size above every other calculation until August 2026 —
-   viscosity falls by a factor of three between 10 °C and 70 °C. */
-function waterRho(T){ return ((1.051865e-05*T - 5.171329e-03)*T - 6.179237e-03)*T + 1000.068; }
-function waterCp(T){  return (((1.606849e-09*T - 4.736562e-07)*T + 5.721385e-05)*T - 2.586464e-03)*T + 4.215269; }
-function waterMu(T){  return 2.76473e-5 * Math.exp(524.9766 / (T + 126.05)); }
-
-/* [ρ, cp, μ, freeze °C] by glycol %, referenced to about 20 °C. */
-const GLYCOL_TABLE = {
-   0:[999,4.182,0.00131,0.0],  5:[1004,4.112,0.00152,-1.6], 10:[1009,4.042,0.00178,-3.3],
-  15:[1014,3.972,0.00208,-5.1], 20:[1019,3.902,0.00244,-7.1], 25:[1024,3.832,0.00287,-9.6],
-  30:[1029,3.762,0.00340,-13.0], 35:[1033,3.692,0.00405,-17.2], 40:[1038,3.622,0.00485,-22.3],
+// Approximate derate factors for Ethylene Glycol (relative to pure water CHW)
+// Based on typical viscosity increase + Cp/density change. Conservative.
+const GLYCOL_DERATE = {
+  // Approximate relative to pure water CHW (viscosity effect on max flow + Cp/density on capacity)
+  // Conservative engineering estimates – always check manufacturer data
+  0:  { flow: 1.00, cap: 1.00 },
+  5:  { flow: 0.97, cap: 0.985 },
+  10: { flow: 0.94, cap: 0.97 },
+  15: { flow: 0.91, cap: 0.955 },
+  20: { flow: 0.87, cap: 0.94 },
+  25: { flow: 0.82, cap: 0.92 },
+  30: { flow: 0.75, cap: 0.90 },
+  40: { flow: 0.62, cap: 0.85 }
 };
-function glycolProps(p){ return GLYCOL_TABLE[p] || GLYCOL_TABLE[0]; }
 
-/* The design basis in one place. Glycol is a RATIO against the table's own 0%
-   row for all three properties — using its viscosities raw would put 30% on an
-   80/60 system at five times the right value. ρ and cp are rounded the way the
-   toolchain rounds them in its input fields, so both tools work from the same
-   figures to the last decimal. */
-function basis(){
- const Ts = flowTemp[fluid];
- const Tr = fluid==='CHW' ? Ts + deltaT : Ts - deltaT;
- const Tm = (Ts + Tr)/2;
- const g = glycolProps(glycolPct), w0 = glycolProps(0);
- return {
-  Ts, Tr, Tm,
-  rho: Math.round(waterRho(Tm)*(g[0]/w0[0])*10)/10,
-  cp:  Math.round(waterCp(Tm) *(g[1]/w0[1])*1e4)/1e4,
-  mu:  waterMu(Tm)*(g[2]/w0[2]),
-  freeze: g[3],
- };
-}
+let system = 'LTHW';
+let mode = 'ls'; // 'ls' or 'kw'
 
-/* ---------- Roughness, mm ---------- */
-const ROUGHNESS_PRESETS = {
-  new:      {carbon:0.046, stainless:0.015},
-  used:     {carbon:0.12,  stainless:0.03},
-  corroded: {carbon:0.5,   stainless:0.06},
-};
-function roughness_mm(){
- if(condition==='custom') return customRough[material];
- return ROUGHNESS_PRESETS[condition][material];
-}
+function setSystem(s) {
+  system = s;
+  document.getElementById('tabLthw').classList.toggle('active', s === 'LTHW');
+  document.getElementById('tabChw').classList.toggle('active', s === 'CHW');
 
-/* ---------- Hydraulics ----------
-   Darcy-Weisbach, Colebrook-White via Swamee-Jain, laminar below Re 2300.
-   Re is built on dynamic viscosity so the temperature correction cannot be
-   lost in a kinematic figure that was fixed at some other temperature. */
-function calcPD(flow_m3s, id_m, rho, mu, eps_m){
- const A = Math.PI*Math.pow(id_m/2,2);
- const v = flow_m3s/A;
- const Re = rho*v*id_m/mu;
- let f;
- if(Re < 2300) f = 64/Math.max(Re,1);
- else {
-  const denom = Math.pow(Math.log10((eps_m/id_m)/3.7 + 5.74/Math.pow(Re,0.9)), 2);
-  f = 0.25/denom;
- }
- return {pd: f*(rho*v*v)/(2*id_m), v, Re};
-}
-
-/* The most a bore can actually carry: bisection on flow against the Pa/m
-   limit, then held to the velocity ceiling, returning which of the two bound
-   it. Leaving the ceiling out quoted DN200 TruBore at 97.8 l/s on a pipe this
-   tool refuses anything above 94.2 on. */
-function maxFlowAtLimit(id_mm, rho, mu, eps_m, limit, vCap){
- const id_m = id_mm/1000;
- const A = Math.PI*Math.pow(id_m/2,2);
- let lo=1e-6, hi=20;
- if(calcPD(hi,id_m,rho,mu,eps_m).pd < limit) lo = hi;
- else for(let i=0;i<60;i++){
-  const mid=(lo+hi)/2;
-  if(calcPD(mid,id_m,rho,mu,eps_m).pd <= limit) lo=mid; else hi=mid;
- }
- if(vCap>0 && lo/A > vCap) return {lps: A*vCap*1000, v: vCap, bound:'vel'};
- return {lps: lo*1000, v: lo/A, bound:'pd'};
-}
-
-/* ---------- Controls ---------- */
-const dpPillsEl=document.getElementById('dpPills');
-[100,150,200,250,300].forEach(v=>{
- const b=document.createElement('button');
- b.className='pill'+(v===300?' active':'');
- b.textContent=v+' Pa/m';
- b.onclick=()=>{targetDp=v;[...dpPillsEl.children].forEach(c=>c.classList.remove('active'));b.classList.add('active');render();};
- dpPillsEl.appendChild(b);
-});
-const dtPillsEl=document.getElementById('dtPills');
-[5,6,10,11,15,20].forEach(v=>{
- const b=document.createElement('button');
- b.className='pill'+(v===20?' active':'');
- b.textContent=v+'K';
- b.onclick=()=>{deltaT=v;document.getElementById('dtCustom').value='';[...dtPillsEl.children].forEach(c=>c.classList.remove('active'));b.classList.add('active');render();};
- dtPillsEl.appendChild(b);
-});
-document.getElementById('dtCustom').addEventListener('input',e=>{
- const v=parseFloat(e.target.value);
- if(!isNaN(v)&&v>0){deltaT=v;[...dtPillsEl.children].forEach(c=>c.classList.remove('active'));render();}
-});
-const glycolPillsEl=document.getElementById('glycolPills');
-[0,10,20,30,40].forEach(v=>{
- const b=document.createElement('button');
- b.className='pill'+(v===0?' active':'');
- b.textContent=v+'%';
- b.onclick=()=>{glycolPct=v;[...glycolPillsEl.children].forEach(c=>c.classList.remove('active'));b.classList.add('active');render();};
- glycolPillsEl.appendChild(b);
-});
-const flowTempPillsEl=document.getElementById('flowTempPills');
-const flowTempInput=document.getElementById('flowTempInput');
-function renderFlowTempPills(){
- const presets = fluid==='CHW' ? [6,7,12] : [80,70,60];
- flowTempPillsEl.innerHTML='';
- presets.forEach(v=>{
-  const b=document.createElement('button');
-  b.className='pill'+(Math.abs(v-flowTemp[fluid])<0.01?' active':'');
-  b.textContent=v+'°C';
-  b.onclick=()=>{flowTemp[fluid]=v;flowTempInput.value=v;renderFlowTempPills();render();};
-  flowTempPillsEl.appendChild(b);
- });
- flowTempInput.value=flowTemp[fluid];
-}
-flowTempInput.addEventListener('input',e=>{
- const v=parseFloat(e.target.value);
- if(!isNaN(v)){flowTemp[fluid]=v;[...flowTempPillsEl.children].forEach(c=>c.classList.remove('active'));render();}
-});
-const condPillsEl=document.getElementById('condPills');
-const roughInput=document.getElementById('roughInput');
-function renderCondPills(){
- condPillsEl.innerHTML='';
- [['new','New'],['used','Used'],['corroded','Corroded'],['custom','Custom']].forEach(([key,label])=>{
-  const b=document.createElement('button');
-  b.className='pill'+(condition===key?' active':'');
-  b.textContent=label+(key==='custom'?'':' '+ROUGHNESS_PRESETS[key][material]);
-  b.onclick=()=>{condition=key;renderCondPills();render();};
-  condPillsEl.appendChild(b);
- });
- roughInput.value=roughness_mm();
-}
-roughInput.addEventListener('input',e=>{
- const v=parseFloat(e.target.value);
- if(!isNaN(v)&&v>0){customRough[material]=v;condition='custom';renderCondPills();render();}
-});
-const vMinInput=document.getElementById('vMinInput'), vMaxInput=document.getElementById('vMaxInput');
-vMinInput.addEventListener('input',e=>{const v=parseFloat(e.target.value); if(!isNaN(v)&&v>=0){vMin=v;render();}});
-vMaxInput.addEventListener('input',e=>{const v=parseFloat(e.target.value); if(!isNaN(v)&&v>0){vMax=v;render();}});
-
-document.getElementById('matCarbon').onclick=()=>{material='carbon';document.getElementById('matCarbon').classList.add('active');document.getElementById('matStainless').classList.remove('active');document.getElementById('headerMatBadge').textContent='CARBON EN10255';document.getElementById('headerMatBadge').style.background='#E2E8F0';renderCondPills();render();};
-document.getElementById('matStainless').onclick=()=>{material='stainless';document.getElementById('matStainless').classList.add('active');document.getElementById('matCarbon').classList.remove('active');document.getElementById('headerMatBadge').textContent='TRUBORE METRIC 304L';document.getElementById('headerMatBadge').style.background='#CCFBF1';renderCondPills();render();};
-document.getElementById('fluidLTHW').onclick=()=>{fluid='LPHW';document.getElementById('fluidLTHW').classList.add('active');document.getElementById('fluidCHW').classList.remove('active');renderFlowTempPills();render();};
-document.getElementById('fluidCHW').onclick=()=>{fluid='CHW';document.getElementById('fluidCHW').classList.add('active');document.getElementById('fluidLTHW').classList.remove('active');renderFlowTempPills();render();};
-document.getElementById('modeKw').onclick=()=>{mode='kW';document.getElementById('modeKw').classList.add('active');document.getElementById('modeLs').classList.remove('active');document.getElementById('mainInput').placeholder='e.g. 45 kW';render();};
-document.getElementById('modeLs').onclick=()=>{mode='Ls';document.getElementById('modeLs').classList.add('active');document.getElementById('modeKw').classList.remove('active');document.getElementById('mainInput').placeholder='e.g. 1.2 L/s';render();};
-
-const mainInput=document.getElementById('mainInput');
-const convertedEl=document.getElementById('converted');
-const recCard=document.getElementById('recCard');
-const tableBody=document.getElementById('tableBody');
-const searchEl=document.getElementById('search');
-let expandedSize=null;
-
-/* Q = ṁ·cp·ΔT, worked through mass flow exactly as the toolchain does it. */
-function getRequiredFlow(b){
- const val=parseFloat(mainInput.value);
- if(isNaN(val)||val<=0) return null;
- if(mode==='kW'){
-  const mdot=val/(b.cp*deltaT);
-  const flow_m3s=mdot/b.rho;
-  return {ls:flow_m3s*1000, flow_m3s, kw:val};
- }
- const flow_m3s=val/1000;
- const mdot=flow_m3s*b.rho;
- return {ls:val, flow_m3s, kw:mdot*b.cp*deltaT};
-}
-function velColour(v){
- if(v>vMax) return '#EF4444';
- if(v>vMax*0.85) return '#F59E0B';
- if(v<vMin) return '#64748B';
- return '#10B981';
-}
-function boundNote(bound){
- return bound==='vel'
-  ? '<span title="capped by the '+vMax.toFixed(1)+' m/s velocity ceiling, not by '+targetDp+' Pa/m" style="color:#64748B;font-weight:700">(vel)</span>'
-  : '';
-}
-
-function render(){
- const b=basis();
- const eps_m=roughness_mm()/1000;
- const req=getRequiredFlow(b);
- const pipes=schedule(material);
-
- /* Every size, in ascending bore order: what it can carry, and what it does
-    at the design flow. Same two questions the toolchain asks. */
- const caps=pipes.map(p=>{
-  const cap=maxFlowAtLimit(p.id_mm,b.rho,b.mu,eps_m,targetDp,vMax);
-  const maxLs=cap.lps;
-  const maxKw=(maxLs/1000)*b.rho*b.cp*deltaT;
-  const at=req?calcPD(req.flow_m3s,p.id_m,b.rho,b.mu,eps_m):null;
-  return {...p, area_mm2:p.area_m2*1e6, maxV:cap.v, bound:cap.bound, maxLs, maxKw, at};
- });
-
- const headerFlow=document.getElementById('headerFlow');
- headerFlow.innerHTML = req ? req.kw.toFixed(1)+' kW<br>'+req.ls.toFixed(3)+' L/s @'+deltaT+'K' : '';
- document.getElementById('headerSub').textContent =
-   (material==='carbon'?'Carbon':'TruBore')+' • '+b.Ts+'/'+b.Tr+'°C • ≤'+targetDp+' Pa/m';
-
- document.getElementById('basisSummary').innerHTML =
-   '<b>Design basis:</b> '+b.Ts+' / '+b.Tr+' °C, ΔT <b>'+deltaT+' K</b>, mean operating temperature <b>'+b.Tm.toFixed(1)+' °C</b>'
-   +(glycolPct?' with <b>'+glycolPct+'% glycol</b> (freeze '+b.freeze.toFixed(1)+' °C)':'')+'.<br>'
-   +'ρ <b>'+b.rho.toFixed(1)+'</b> kg/m³ and c<sub>p</sub> <b>'+b.cp.toFixed(4)+'</b> kJ/kg·K at the mean temperature, '
-   +'and pipe friction μ <b>'+(b.mu*1000).toFixed(3)+'</b> mPa·s at the same temperature.';
-
- if(req){
-  convertedEl.textContent = mode==='kW'
-   ? '= '+req.ls.toFixed(3)+' L/s @ ΔT'+deltaT+'K (ρ='+b.rho.toFixed(1)+')'
-   : '= '+req.kw.toFixed(1)+' kW @ ΔT'+deltaT+'K (ρ='+b.rho.toFixed(1)+', cp='+b.cp.toFixed(4)+')';
- } else convertedEl.textContent='';
-
- /* Selection: the smallest bore inside the Pa/m limit AND the velocity band,
-    falling back to the smallest inside the gradient alone if nothing sits in
-    the band. This is the toolchain's rule, kept here word for word so the
-    phone cannot recommend a size the desk tool would not. */
- let best=null;
- if(req){
-  const firstOk=caps.find(c=>c.at.pd<=targetDp && c.at.v>=vMin && c.at.v<=vMax);
-  const firstPdOk=caps.find(c=>c.at.pd<=targetDp);
-  best=firstOk||firstPdOk||caps[caps.length-1];
- }
-
- if(req&&best){
-  const act=best.at;
-  const vCol=velColour(act.v);
-  const spareKw=best.maxKw-req.kw;
-  const sparePct=(best.maxKw/req.kw-1)*100;
-  const utilPct=(req.kw/best.maxKw)*100;
-  let headColor='#10B981', headLabel='';
-  if(spareKw<0){ headColor='#EF4444'; headLabel='OVER by '+Math.abs(spareKw).toFixed(1)+' kW ('+Math.abs(sparePct).toFixed(1)+'%)'; }
-  else if(sparePct<5){ headColor='#F59E0B'; headLabel='+'+spareKw.toFixed(1)+' kW / +'+sparePct.toFixed(1)+'% headroom — TIGHT ('+utilPct.toFixed(0)+'% utilized)'; }
-  else if(sparePct<15){ headColor='#10B981'; headLabel='+'+spareKw.toFixed(1)+' kW / +'+sparePct.toFixed(1)+'% headroom — GOOD ('+utilPct.toFixed(0)+'% utilized)'; }
-  else { headColor='#2563EB'; headLabel='+'+spareKw.toFixed(1)+' kW / +'+sparePct.toFixed(1)+'% headroom ('+utilPct.toFixed(0)+'% utilized)'; }
-  /* Says which limit the peak is against — "peak at 300 Pa/m" on a size that
-     is actually stopped by velocity is a figure this tool would refuse. */
-  const capWhat = best.bound==='vel'
-   ? 'Can take <b>'+best.maxKw.toFixed(1)+' kW</b> @ '+vMax.toFixed(1)+' m/s (velocity ceiling binds first)'
-   : 'Can take <b>'+best.maxKw.toFixed(1)+' kW</b> @ ≤'+targetDp+' Pa/m';
-  recCard.style.display='block';
-  recCard.innerHTML='<div style="background:#EFF6FF;border:1px solid #BFDBFE;border-radius:16px;padding:12px">'
-   +'<div style="display:flex;justify-content:space-between;align-items:center"><div style="font-size:10px;font-weight:800;letter-spacing:0.08em;color:#2563EB">RECOMMENDED — '+req.kw.toFixed(1)+' kW DESIGN</div><div style="font-size:10px;font-weight:800;padding:3px 8px;border-radius:999px;background:'+headColor+';color:white">'+(spareKw>=0?'+'+sparePct.toFixed(1)+'% SPARE':sparePct.toFixed(1)+'% OVER')+'</div></div>'
-   +'<div style="font-weight:800;font-size:18px;margin:6px 0 2px 0">'+best.name+' <span style="font-size:11px;font-weight:600;color:#64748B">'+(material==='carbon'?'EN10255':'TruBore Metric')+'</span></div>'
-   +'<div class="mono" style="font-size:12px;color:#334155;margin-bottom:8px">'+capWhat+' • Peak '+best.maxLs.toFixed(3)+' L/s • Vel '+best.maxV.toFixed(2)+' m/s</div>'
-   +'<div style="background:white;border:1px solid #E2E8F0;border-radius:12px;padding:8px 10px;margin-bottom:8px"><div style="font-size:11px;font-weight:700;color:#475569">HEADROOM vs DESIGN</div><div style="font-size:13px;font-weight:800;color:'+headColor+'">'+headLabel+'</div><div style="margin-top:6px;height:8px;background:#F1F5F9;border-radius:999px;overflow:hidden"><div style="height:100%;width:'+Math.min(100,utilPct).toFixed(0)+'%;background:'+headColor+';border-radius:999px"></div></div><div class="mono" style="font-size:10px;color:#64748B;margin-top:4px">'+req.kw.toFixed(1)+' kW used of '+best.maxKw.toFixed(1)+' kW max</div></div>'
-   +'<div class="mono" style="display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:11px"><div>OD: '+best.od+' mm</div><div>ID: '+best.id_mm.toFixed(1)+' mm</div><div>Wall: '+best.wall+' mm</div><div>Area: '+best.area_mm2.toFixed(0)+' mm²</div></div>'
-   +'<div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap"><span class="mono" style="background:white;border:1px solid #E2E8F0;border-radius:999px;padding:4px 10px;font-size:11px">Vel @ design: <b style="color:'+vCol+'">'+act.v.toFixed(2)+' m/s</b></span><span class="mono" style="background:white;border:1px solid #E2E8F0;border-radius:999px;padding:4px 10px;font-size:11px">Actual: <b>'+act.pd.toFixed(0)+' Pa/m</b></span><span class="mono" style="background:white;border:1px solid #E2E8F0;border-radius:999px;padding:4px 10px;font-size:11px">Re: '+Math.round(act.Re).toLocaleString()+'</span></div>'
-   +(act.pd>targetDp?'<div style="margin-top:8px;font-size:11px;font-weight:700;color:#EF4444">Nothing in this schedule holds '+targetDp+' Pa/m at this flow — largest size shown.</div>':'')
-   +(act.v>vMax?'<div style="margin-top:8px;font-size:11px;font-weight:700;color:#EF4444">Velocity above the '+vMax.toFixed(1)+' m/s ceiling at design flow.</div>':'')
-   +'</div>';
- } else recCard.style.display='none';
-
- const q=searchEl.value.toLowerCase();
- tableBody.innerHTML='';
- caps.filter(c=>!q||c.name.toLowerCase().includes(q)||c.dn.includes(q)).forEach(c=>{
-  const isExp=expandedSize===c.name;
-  const vCol=velColour(c.maxV);
-  const isRec=best&&best.name===c.name;
-  let headHTML='';
-  if(req){
-   const spareKw=c.maxKw-req.kw;
-   const sparePct=(c.maxKw/req.kw-1)*100;
-   const util=(req.kw/c.maxKw*100);
-   let col='#64748B', txt='';
-   if(spareKw<0){ col='#EF4444'; txt=sparePct.toFixed(1)+'% over'; }
-   else if(sparePct<10){ col='#F59E0B'; txt='+'+sparePct.toFixed(1)+'% spare'; }
-   else { col='#10B981'; txt='+'+sparePct.toFixed(1)+'% spare'; }
-   headHTML='<div style="font-size:10px;font-weight:800;color:'+col+'">'+txt+'</div><div style="height:4px;background:#F1F5F9;border-radius:999px;margin-top:2px;overflow:hidden"><div style="height:100%;width:'+Math.min(100,util).toFixed(0)+'%;background:'+col+'"></div></div>';
+  const dtSelect = document.getElementById('deltaT');
+  const current = dtSelect.value;
+  dtSelect.innerHTML = '';
+  let options, defaultVal;
+  if (s === 'LTHW') {
+    options = [10, 15, 20, 25, 30];
+    defaultVal = '20';
+    document.getElementById('glycolWrap').style.display = 'none';
+    document.getElementById('glycolNote').style.display = 'none';
+  } else {
+    options = [5, 6, 7, 8, 10];
+    defaultVal = '6';
+    document.getElementById('glycolWrap').style.display = '';
+    document.getElementById('glycolNote').style.display = '';
   }
-  const div=document.createElement('div');
-  div.innerHTML='<div class="row" style="cursor:pointer;align-items:start'+(isRec?';background:#EFF6FF':'')+'">'
-   +'<div style="display:flex;align-items:center;gap:6px"><span class="dot" style="background:'+vCol+'"></span><span class="mono" style="font-weight:700">'+c.name+'</span>'+(isRec?'<span class="badge" style="background:#2563EB;color:white">REC</span>':'')+'</div>'
-   +'<div class="mono">'+c.od+'</div><div class="mono" style="font-weight:700">'+c.id_mm.toFixed(1)+'</div><div class="mono hide-m">'+c.wall+'</div>'
-   +'<div class="mono" style="color:'+vCol+';font-weight:700">'+c.maxV.toFixed(2)+'</div>'
-   +'<div class="mono">'+c.maxLs.toFixed(2)+(c.bound==='vel'?'<br>'+boundNote(c.bound):'')+'</div>'
-   +'<div class="mono" style="font-weight:800">'+c.maxKw.toFixed(1)+(req?'<br>'+headHTML:'')+'</div>'
-   +'</div>'
-   +(isExp?'<div style="padding:0 12px 12px 12px"><div style="background:#F8FAFC;border:1px solid #E2E8F0;border-radius:12px;padding:10px;display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:11px" class="mono">'
-   +'<div>OD: '+c.od+' mm</div><div>ID: '+c.id_mm.toFixed(1)+' mm (OD−2×wall)</div><div>Wall: '+c.wall+' mm</div><div>Area: '+c.area_mm2.toFixed(1)+' mm²</div>'
-   +'<div>Max V: '+c.maxV.toFixed(3)+' m/s</div><div>Max L/s: '+c.maxLs.toFixed(3)+'</div>'
-   +'<div>Max kW: '+c.maxKw.toFixed(2)+' @'+deltaT+'K</div><div>ε: '+roughness_mm()+' mm</div>'
-   +'<div style="grid-column:span 2">Held by: <b>'+(c.bound==='vel'?vMax.toFixed(1)+' m/s velocity ceiling':targetDp+' Pa/m gradient')+'</b></div>'
-   +(req?'<div style="grid-column:span 2;background:white;border:1px solid #E2E8F0;border-radius:12px;padding:8px;margin-top:4px">'
-   +'<div style="font-weight:800;font-size:12px">vs DESIGN '+req.kw.toFixed(1)+' kW</div>'
-   +'<div>Spare: '+(c.maxKw-req.kw).toFixed(1)+' kW ('+((c.maxKw/req.kw-1)*100).toFixed(1)+'%)</div>'
-   +'<div>Utilized: '+(req.kw/c.maxKw*100).toFixed(1)+'%</div>'
-   +'<div>Peak capacity: '+c.maxKw.toFixed(1)+' kW '+(c.bound==='vel'?'@ '+vMax.toFixed(1)+' m/s':'@ ≤'+targetDp+' Pa/m')+'</div>'
-   +'<div style="margin-top:4px">At your flow '+req.ls.toFixed(3)+' L/s → V='+c.at.v.toFixed(2)+' m/s, ΔP='+c.at.pd.toFixed(0)+' Pa/m</div>'
-   +'</div>':'')
-   +'</div></div>':'');
-  div.firstChild.onclick=()=>{expandedSize=isExp?null:c.name;render();};
-  tableBody.appendChild(div);
- });
-
- document.getElementById('tableTitle').textContent='Capacity @ '+targetDp+' Pa/m — '+(material==='carbon'?'Carbon EN10255 Medium':'Stainless 304 TruBore Metric');
- document.getElementById('tableSub').textContent='ε='+roughness_mm()+' mm • '+b.Ts+'/'+b.Tr+'°C ΔT'+deltaT+'K • μ='+(b.mu*1000).toFixed(3)+' mPa·s'+(glycolPct?' • '+glycolPct+'% glycol':'')+' • '+vMin.toFixed(1)+'–'+vMax.toFixed(1)+' m/s • '+caps.length+' sizes';
+  options.forEach(v => {
+    const opt = document.createElement('option');
+    opt.value = v;
+    opt.textContent = v + ' K';
+    if (String(v) === defaultVal) opt.selected = true;
+    dtSelect.appendChild(opt);
+  });
+  if (options.map(String).includes(current)) {
+    dtSelect.value = current;
+  }
+  saveSettings();
+  recalc();
 }
-mainInput.addEventListener('input',render);
-searchEl.addEventListener('input',render);
 
-const sizerWrap=document.getElementById('sizerWrap');
-const toggleBtn=document.getElementById('toggleBtn');
-const fab=document.getElementById('fab');
-let collapsed=false;
-function setCollapsed(v){
- collapsed=v;
- if(v){ sizerWrap.classList.add('collapsed'); toggleBtn.textContent='Show Sizer ▼'; fab.style.display='flex'; document.getElementById('tableBody').style.maxHeight='calc(100dvh - 56px - 120px)'; }
- else{ sizerWrap.classList.remove('collapsed'); toggleBtn.textContent='Hide Sizer ▲'; fab.style.display='none'; document.getElementById('tableBody').style.maxHeight='60vh'; }
+function setMode(m) {
+  mode = m;
+  document.getElementById('modeLs').classList.toggle('active', m === 'ls');
+  document.getElementById('modeKw').classList.toggle('active', m === 'kw');
+  document.getElementById('inputLabel').textContent = m === 'ls' ? 'Required Flow (L/s)' : 'Required Capacity (kW)';
+  // Convert current value if switching
+  const inp = document.getElementById('mainInput');
+  const val = parseFloat(inp.value) || 0;
+  if (val > 0) {
+    const factor = getCapacityFactor();
+    if (m === 'ls' && mode !== 'ls') { // was kw, now ls
+      // already set
+    }
+    // Simple: leave the number, user adjusts. Or convert:
+    // For simplicity leave as-is; user knows context.
+  }
+  recalc();
 }
-toggleBtn.onclick=()=>setCollapsed(!collapsed);
-document.getElementById('viewTableBtn').onclick=()=>{ setCollapsed(true); document.getElementById('tableBody').scrollIntoView({behavior:'smooth'}); };
-fab.onclick=()=>setCollapsed(false);
 
-renderFlowTempPills();
-renderCondPills();
-render();
+function getCapacityFactor() {
+  // kW per L/s  (scales linearly with ΔT)
+  const dt = parseFloat(document.getElementById('deltaT').value) || (system === 'LTHW' ? 20 : 6);
+  if (system === 'LTHW') {
+    // Base 81.95 at 20 K for pure water LTHW
+    return 81.95 * (dt / 20);
+  }
+  // CHW
+  const g = parseInt(document.getElementById('glycol').value) || 0;
+  const base = 25.15; // pure water at ΔT=6
+  const der = GLYCOL_DERATE[g] || GLYCOL_DERATE[0];
+  return base * (dt / 6) * der.cap;
+}
+
+function getData() {
+  const pa = parseFloat(document.getElementById('paTarget').value) || 300;
+  const scale = Math.sqrt(pa / 300); // approximate turbulent scaling
+
+  // Update note visibility
+  const note = document.getElementById('paNote');
+  if (note) note.style.display = (pa === 300) ? 'none' : 'block';
+
+  if (system === 'LTHW') {
+    const ss = LTHW_SS.map(p => ({ ...p, lps: p.lps * scale, v: p.v * scale }));
+    const cs = LTHW_CS.map(p => ({ ...p, lps: p.lps * scale, v: p.v * scale }));
+    return { ss, cs };
+  }
+  const g = parseInt(document.getElementById('glycol').value) || 0;
+  const der = GLYCOL_DERATE[g] || GLYCOL_DERATE[0];
+  const ss = CHW_SS.map(p => ({
+    ...p,
+    lps: p.lps * der.flow * scale,
+    v: p.v * der.flow * scale
+  }));
+  const cs = CHW_CS.map(p => ({
+    ...p,
+    lps: p.lps * der.flow * scale,
+    v: p.v * der.flow * scale
+  }));
+  return { ss, cs };
+}
+
+function findRecommended(arr, requiredLps) {
+  for (let i = 0; i < arr.length; i++) {
+    if (arr[i].lps >= requiredLps - 1e-6) {
+      return { idx: i, item: arr[i] };
+    }
+  }
+  return { idx: arr.length - 1, item: arr[arr.length - 1] }; // largest
+}
+
+function statusText(maxLps, req) {
+  if (req <= 0) return { text: '—', cls: '' };
+  const pct = ((maxLps - req) / req) * 100;
+  if (pct >= 15) return { text: `+${pct.toFixed(0)}% spare`, cls: 'status-ok' };
+  if (pct >= 0) return { text: `+${pct.toFixed(0)}% tight`, cls: 'status-tight' };
+  return { text: `${pct.toFixed(0)}% under`, cls: 'status-under' };
+}
+
+function recalc() {
+  const factor = getCapacityFactor();
+  const inp = parseFloat(document.getElementById('mainInput').value) || 0;
+  let requiredLps, requiredKw;
+  if (mode === 'ls') {
+    requiredLps = inp;
+    requiredKw = inp * factor;
+  } else {
+    requiredKw = inp;
+    requiredLps = factor > 0 ? inp / factor : 0;
+  }
+  // Always show both values
+  document.getElementById('dispLs').textContent = requiredLps.toFixed(3);
+  document.getElementById('dispKw').textContent = requiredKw < 10 ? requiredKw.toFixed(1) : Math.round(requiredKw);
+
+  const data = getData();
+  // Update max kw for current factor
+  data.ss.forEach(p => p.kw = p.lps * factor);
+  data.cs.forEach(p => p.kw = p.lps * factor);
+
+  // Advisory
+  const recSs = findRecommended(data.ss, requiredLps);
+  const recCs = findRecommended(data.cs, requiredLps);
+
+  document.getElementById('recSs').textContent = 'DN' + recSs.item.dn;
+  document.getElementById('recCs').textContent = 'DN' + recCs.item.dn;
+
+  const mSs = statusText(recSs.item.lps, requiredLps);
+  const mCs = statusText(recCs.item.lps, requiredLps);
+  const elSs = document.getElementById('marginSs');
+  const elCs = document.getElementById('marginCs');
+  elSs.textContent = mSs.text;
+  elSs.className = 'adv-margin ' + (mSs.cls === 'status-ok' ? 'ok' : mSs.cls === 'status-tight' ? 'tight' : 'under');
+  elCs.textContent = mCs.text;
+  elCs.className = 'adv-margin ' + (mCs.cls === 'status-ok' ? 'ok' : mCs.cls === 'status-tight' ? 'tight' : 'under');
+
+  // Tables
+  renderTable('tableSs', data.ss, requiredLps, recSs.idx, false);
+  renderTable('tableCs', data.cs, requiredLps, recCs.idx, true);
+  updateCheck();
+}
+
+function renderTable(tableId, arr, req, recIdx, showId) {
+  const tbody = document.querySelector('#' + tableId + ' tbody');
+  tbody.innerHTML = '';
+  arr.forEach((p, i) => {
+    const st = statusText(p.lps, req);
+    const tr = document.createElement('tr');
+    if (i === recIdx) tr.classList.add('rec', tableId === 'tableSs' ? 'highlight-ss' : 'highlight-cs');
+    const velClass = p.v > 3.0 ? 'vel-warn' : '';
+    let html = `<td>DN${p.dn}</td>`;
+    if (showId) html += `<td>${p.id.toFixed(1)}</td>`;
+    html += `<td>${p.lps.toFixed(2)}</td>`;
+    html += `<td>${p.kw < 10 ? p.kw.toFixed(1) : Math.round(p.kw)}</td>`;
+    html += `<td class="${velClass}">${p.v.toFixed(2)}</td>`;
+    html += `<td><span class="status-pill ${st.cls}">${st.text}</span></td>`;
+    tr.innerHTML = html;
+    tbody.appendChild(tr);
+  });
+}
+
+
+function updateCheck() {
+  const dn = parseInt(document.getElementById('checkDn').value);
+  const resultEl = document.getElementById('checkResult');
+  if (!dn) {
+    resultEl.style.display = 'none';
+    return;
+  }
+  const data = getData();
+  const factor = getCapacityFactor();
+  const ss = data.ss.find(p => p.dn === dn);
+  const cs = data.cs.find(p => p.dn === dn);
+  if (ss) {
+    document.getElementById('checkSs').textContent = ss.lps.toFixed(2) + ' L/s  ·  ' + (ss.lps * factor < 10 ? (ss.lps * factor).toFixed(1) : Math.round(ss.lps * factor)) + ' kW';
+  }
+  if (cs) {
+    document.getElementById('checkCs').textContent = cs.lps.toFixed(2) + ' L/s  ·  ' + (cs.lps * factor < 10 ? (cs.lps * factor).toFixed(1) : Math.round(cs.lps * factor)) + ' kW';
+  }
+  resultEl.style.display = 'block';
+}
+
+function copyResults() {
+  const factor = getCapacityFactor();
+  const inp = parseFloat(document.getElementById('mainInput').value) || 0;
+  let requiredLps, requiredKw;
+  if (mode === 'ls') {
+    requiredLps = inp;
+    requiredKw = inp * factor;
+  } else {
+    requiredKw = inp;
+    requiredLps = factor > 0 ? inp / factor : 0;
+  }
+  const pa = document.getElementById('paTarget').value;
+  const dt = document.getElementById('deltaT').value;
+  const g = document.getElementById('glycol').value;
+  const sysLabel = system === 'LTHW' ? 'LTHW/LPHW' : 'CHW';
+  const glycolText = (system === 'CHW' && g !== '0') ? ` + ${g}% EG` : '';
+  const recSs = document.getElementById('recSs').textContent;
+  const marginSs = document.getElementById('marginSs').textContent;
+  const recCs = document.getElementById('recCs').textContent;
+  const marginCs = document.getElementById('marginCs').textContent;
+
+  const text = `${sysLabel} ${dt} K${glycolText} @ ${pa} Pa/m
+Required: ${requiredLps.toFixed(3)} L/s  (${requiredKw < 10 ? requiredKw.toFixed(1) : Math.round(requiredKw)} kW)
+
+Recommended:
+• ${recSs} True Bore SS  (${marginSs})
+• ${recCs} Carbon Steel Sch.10  (${marginCs})
+
+(HVAC Pipe Sizer)`;
+
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = document.getElementById('copyBtn');
+    btn.textContent = 'Copied!';
+    btn.classList.add('copied');
+    setTimeout(() => {
+      btn.textContent = 'Copy results';
+      btn.classList.remove('copied');
+    }, 1800);
+  }).catch(() => {
+    alert('Could not copy – please select and copy manually.');
+  });
+}
+
+function toggleTheme() {
+  const html = document.documentElement;
+  const current = html.getAttribute('data-theme') || 'dark';
+  const next = current === 'dark' ? 'light' : 'dark';
+  html.setAttribute('data-theme', next);
+  document.getElementById('themeBtn').textContent = next === 'dark' ? '🌙' : '☀️';
+  saveSettings();
+}
+
+function saveSettings() {
+  try {
+    const settings = {
+      system,
+      mode,
+      deltaT: document.getElementById('deltaT').value,
+      paTarget: document.getElementById('paTarget').value,
+      glycol: document.getElementById('glycol').value,
+      input: document.getElementById('mainInput').value,
+      theme: document.documentElement.getAttribute('data-theme') || 'dark'
+    };
+    localStorage.setItem('hvacPipeSizer', JSON.stringify(settings));
+  } catch (e) {}
+}
+
+function loadSettings() {
+  try {
+    const raw = localStorage.getItem('hvacPipeSizer');
+    if (!raw) return false;
+    const s = JSON.parse(raw);
+    if (s.theme) {
+      document.documentElement.setAttribute('data-theme', s.theme);
+      document.getElementById('themeBtn').textContent = s.theme === 'dark' ? '🌙' : '☀️';
+    }
+    if (s.system) setSystem(s.system);
+    if (s.deltaT) document.getElementById('deltaT').value = s.deltaT;
+    if (s.paTarget) document.getElementById('paTarget').value = s.paTarget;
+    if (s.glycol) document.getElementById('glycol').value = s.glycol;
+    if (s.mode) setMode(s.mode);
+    if (s.input) document.getElementById('mainInput').value = s.input;
+    return true;
+  } catch (e) { return false; }
+}
+
+// Init
+const loaded = loadSettings();
+if (!loaded) {
+  setSystem('LTHW');
+}
+recalc();
+updateCheck();
+
+// Auto-save on input change
+document.getElementById('mainInput').addEventListener('input', () => {
+  saveSettings();
+});
+
 </script>
-<script>(function(){var loc=location.href.replace(/#.*$/,"");var ATTR_NAMES=["data-product-id","data-productid","data-product_id","product-id","productid","product_id","data-source-entity-id","source-entity-id","source_entity_id","data-product","data-metadata","data-meta"];var DATASET_KEYS=["productId","productid","product_id","sourceEntityId","sourceentityid","source_entity_id","product","metadata","meta"];function readProductId(value){if(typeof value!=="string"||value.length===0)return null;if(/^[0-9]{6,}$/.test(value))return value;var match=value.match(/(?:product(?:_|-)?id|source(?:_|-)?entity(?:_|-)?id)["'=:\s]+([0-9]{6,})/i);return match?match[1]:null}function extractProductId(start){for(var node=start;node&&node!==document.body;node=node.parentElement){for(var i=0;i<ATTR_NAMES.length;i++){var attrValue=node.getAttribute&&node.getAttribute(ATTR_NAMES[i]);var attrProductId=readProductId(attrValue);if(attrProductId)return attrProductId}var dataset=node.dataset||null;if(dataset){for(var j=0;j<DATASET_KEYS.length;j++){var dataValue=dataset[DATASET_KEYS[j]];var dataProductId=readProductId(dataValue);if(dataProductId)return dataProductId}}}return null}function isInlineMediaSlotElement(node){return !!(node&&node.getAttribute&&node.getAttribute("data-clippy-inline-media-slot")!==null)}function findInlineMediaSlot(start){for(var node=start;node&&node!==document.body;node=node.parentElement){if(isInlineMediaSlotElement(node))return node}return null}function readInlineMediaUrl(node){if(!node)return null;return node.getAttribute&&((node.getAttribute("data-clippy-inline-media-url")||node.getAttribute("data-url")||node.getAttribute("data_url")))||node.href||null}function stripHash(url){return String(url).replace(/#.*$/,"")}function urlsMatch(a,b){if(!a||!b)return false;try{return stripHash(new URL(a,loc).href)===stripHash(new URL(b,loc).href)}catch(_){return stripHash(a)===stripHash(b)}}function isFirstPartyReelUrl(value){try{var url=new URL(value,loc);if(url.protocol!=="https:")return false;var host=url.hostname.toLowerCase();var supported=host==="instagram.com"||host.endsWith(".instagram.com")||host==="facebook.com"||host.endsWith(".facebook.com");return supported&&/\/reels?\//i.test(url.pathname)}catch(_){return false}}function isInlineMediaUrlClick(node,href){var slot=findInlineMediaSlot(node);if(!slot)return false;var slotUrl=readInlineMediaUrl(slot);if(slotUrl)return urlsMatch(href,slotUrl);return isFirstPartyReelUrl(href)}function findDataHref(start){for(var node=start;node&&node!==document.body;node=node.parentElement){if(node.getAttribute){var href=node.getAttribute("data-href")||node.getAttribute("data-url");if(href)return{href:href,node:node}}}return null}var nativeOpen=window.open;window.open=function(url){if(parent!==window&&typeof url==="string"&&/^https?:\/\//.test(url)){parent.postMessage({type:"ecto:usercontent-link-click",href:url},"*");return null}return nativeOpen?nativeOpen.apply(window,arguments):null};document.addEventListener("click",function(e){var target=e.target instanceof Element?e.target:null;if(!target)return;if(parent===window)return;var a=target.closest?target.closest("a[href]"):null;if(a&&a.href&&/^https?:\/\//.test(a.href)&&a.href.replace(/#.*$/,"")!==loc){if(isInlineMediaUrlClick(a,a.href))return;var productId=extractProductId(target)||extractProductId(a);if(productId){e.preventDefault();parent.postMessage({type:"ecto-artifact-link-click",productId:productId},"*");return}e.preventDefault();parent.postMessage({type:"ecto:usercontent-link-click",href:a.href},"*");return}var dataHref=findDataHref(target);if(dataHref&&/^https?:\/\//.test(dataHref.href)&&dataHref.href.replace(/#.*$/,"")!==loc){if(isInlineMediaUrlClick(dataHref.node,dataHref.href))return;e.preventDefault();parent.postMessage({type:"ecto:usercontent-link-click",href:dataHref.href},"*")}},true)})();</script><script>(function(){var FOCUS_TYPE="ecto:artifact-focus-request";var CLOSE_TYPE="ecto:artifact-close-request";function focusArtifactDocument(){var body=document.body;if(!body)return;try{window.focus();}catch(e){}if(!body.hasAttribute("tabindex"))body.setAttribute("tabindex","-1");try{body.focus({preventScroll:true});}catch(e){try{body.focus();}catch(e2){}}}window.addEventListener("message",function(event){if(event.source!==window.parent)return;var data=event.data;if(!data||typeof data!=="object"||data.type!==FOCUS_TYPE)return;if(document.readyState==="loading"){document.addEventListener("DOMContentLoaded",focusArtifactDocument,{once:true});return;}focusArtifactDocument();});window.addEventListener("keydown",function(event){if(event.key!=="Escape")return;window.setTimeout(function(){if(event.defaultPrevented)return;window.parent.postMessage({type:CLOSE_TYPE},"*");},0);});})();</script></body>
+</body>
 </html>

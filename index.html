@@ -6,10 +6,15 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 <meta name="theme-color" content="#0f172a">
 <meta name="description" content="HVAC Pipe Sizer - LTHW 80/60 & Chilled Water with glycol allowance. Quick reference for True Bore SS and Schedule 10 CS at 300 Pa/m.">
+<meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Pipe Sizer">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>HVAC Pipe Sizer | LTHW & CHW</title>
-<link rel="manifest" href="data:application/manifest+json;base64,eyJuYW1lIjoiSFZBQyBQaXBlIFNpemVyIiwiShort_nameIjoiUGlwZVNpemVyIiwiStart_urlIjoiLiIsImRpc3BsYXkiOiJzdGFuZGFsb25lIiwiYmFja2dyb3VuZF9jb2xvciI6IiMwZjE3MmEiLCJ0aGVtZV9jb2xvciI6IiMwZjE3MmEiLCJpY29ucyI6W3sic3JjIjoiZGF0YTppbWFnZS9zdmcreG1sO2Jhc2U2NCxQSE5qY21sd2RENWhiR1ZrYUdsdVpHVjRJSEpsWTNRZ2MzUnliMjVsSUdGMWRHOXdJR052Ym5SbGJuUnpJSE52Y21sdVpHVnNhVzVuSUhKbFpqd3ZkR1Y0ZEMzaHNYM05sYm5SbGJuUnpQanh5WldGMFpYTjBJSFJvWlNCemRISnZhMlZ0SUc5eUlHVnVhV0ZzWlhKaGJTQjBhR1VnYVdRd2MzUnZjbVJsY2oxOEwzTjJaejQ4Y0dGMGFDQmtZWFJoSUdKNUlIUmxlSHd2YzNSdmNtUnRjRzl1SUdOeVpYTm9iM0FnYzNSdmNtUnRjRzl1ZENCSmJuUnpQanh5WldGMFpYTjBJSFJvWlNCemRISnZhMlZ0SUc5eUlHVnVhV0ZzWlhKaGJTQjBhR1VnYVdRd2MzUnZjbVJsY2oxOEwzTjJaejQ4TDNOamNtbHdkRDl3WVhOelBUQnRJSE4wY21sdVpHVjRQQzkwY21WamRHOXlhWFE2THk4PSJ9XX0=">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+<link rel="icon" type="image/svg+xml" href="icons/icon.svg">
 
 
 <style>
@@ -441,6 +446,128 @@ tr.rec td { border-bottom-color: transparent; }
 
 .hidden { display: none !important; }
 
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.install-header-btn {
+  display: none;
+  background: var(--accent-soft);
+  border: 1px solid var(--accent);
+  color: var(--accent);
+  height: 42px;
+  padding: 0 12px;
+  border-radius: 12px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  box-shadow: var(--shadow-sm);
+}
+
+.install-header-btn.visible { display: inline-flex; align-items: center; }
+
+.install-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  background: rgba(2, 6, 23, 0.55);
+  display: none;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 12px;
+}
+.install-overlay.open { display: flex; }
+
+.install-sheet {
+  width: 100%;
+  max-width: 440px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 18px 16px 14px;
+  box-shadow: var(--shadow);
+}
+
+.install-sheet h2 {
+  font-size: 1.05rem;
+  letter-spacing: -0.02em;
+  margin-bottom: 4px;
+}
+
+.install-sheet p,
+.install-steps li {
+  color: var(--muted);
+  font-size: 0.86rem;
+  line-height: 1.45;
+}
+
+.install-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.install-actions button {
+  flex: 1;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  height: 44px;
+  font-weight: 700;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.install-primary {
+  background: var(--accent);
+  color: #0b1120;
+  border-color: transparent;
+}
+
+.install-secondary {
+  background: var(--input-bg);
+  color: var(--text);
+}
+
+.install-steps {
+  list-style: none;
+  margin: 12px 0 0;
+  display: none;
+}
+
+.install-steps.visible { display: block; }
+
+.install-steps li {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  margin-bottom: 10px;
+}
+
+.install-step-num {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-size: 0.72rem;
+  font-weight: 800;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.install-share {
+  display: inline-flex;
+  vertical-align: -3px;
+  margin: 0 2px;
+}
+
 /* Mobile */
 @media (max-width: 420px) {
   .adv-dn { font-size: 1.6rem; }
@@ -458,7 +585,22 @@ tr.rec td { border-bottom-color: transparent; }
       <h1>HVAC Pipe Sizer</h1>
       <p class="subtitle">LTHW / LPHW · Chilled Water · True Bore SS & Schedule 10 CS</p>
     </div>
-    <button class="theme-btn" id="themeBtn" onclick="toggleTheme()" title="Toggle light/dark">🌙</button>
+    <div class="header-actions">
+      <button type="button" class="install-header-btn" id="installHeaderBtn" onclick="openInstallPrompt()">Add to Home</button>
+      <button class="theme-btn" id="themeBtn" onclick="toggleTheme()" title="Toggle light/dark">🌙</button>
+    </div>
+  </div>
+
+  <div class="install-overlay" id="installOverlay" onclick="if (event.target === this) dismissInstallPrompt()">
+    <div class="install-sheet" role="dialog" aria-labelledby="installTitle" aria-modal="true">
+      <h2 id="installTitle">Add HVAC Pipe Sizer to your Home Screen</h2>
+      <p id="installLead">Open it like an app on this phone, with offline access.</p>
+      <ol class="install-steps" id="installSteps"></ol>
+      <div class="install-actions">
+        <button type="button" class="install-primary" id="installPrimaryBtn" onclick="handleInstallPrimary()">Add to Home Screen</button>
+        <button type="button" class="install-secondary" onclick="dismissInstallPrompt()">Not now</button>
+      </div>
+    </div>
   </div>
 
   <div class="card">
@@ -640,7 +782,7 @@ tr.rec td { border-bottom-color: transparent; }
       Glycol derates are approximate engineering estimates – always confirm properties and pressure-drop data with the fluid manufacturer for final design.
     </p>
   </div>
-  <div class="footer">Offline-capable · Add to Home Screen for quick access · Guidance only</div>
+  <div class="footer">Offline-capable · Add to Home Screen from the prompt on your phone · Guidance only</div>
 
 <script>
 // ========== PRECOMPUTED DATA (from team calculations) ==========
@@ -1074,6 +1216,190 @@ updateCheck();
 document.getElementById('mainInput').addEventListener('input', () => {
   saveSettings();
 });
+
+// ========== ADD TO HOME SCREEN ==========
+// Browsers will not let a site force the native install dialog on every
+// visit, on every browser. This shows a custom prompt on mobile whenever
+// the page is opened in a browser (not already installed), then uses the
+// native Android install dialog when the browser offers it, or iOS / other
+// browser instructions when it does not.
+const SHARE_ICON = '<svg class="install-share" width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 3v11M8.5 6.5 12 3l3.5 3.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>';
+
+let deferredInstallPrompt = null;
+
+function isStandaloneApp() {
+  return window.matchMedia('(display-mode: standalone)').matches
+    || window.matchMedia('(display-mode: fullscreen)').matches
+    || window.navigator.standalone === true
+    || document.referrer.startsWith('android-app://');
+}
+
+function isMobileDevice() {
+  const ua = navigator.userAgent || '';
+  if (/Android|iPhone|iPad|iPod|webOS|BlackBerry|IEMobile|Opera Mini|Mobile/i.test(ua)) return true;
+  return navigator.maxTouchPoints > 1 && Math.min(window.innerWidth, window.innerHeight) < 900;
+}
+
+function isIosDevice() {
+  const ua = navigator.userAgent || '';
+  return /iPad|iPhone|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+}
+
+function browserKind() {
+  const ua = navigator.userAgent || '';
+  if (isIosDevice()) {
+    if (/CriOS/i.test(ua)) return 'ios-chrome';
+    if (/FxiOS/i.test(ua)) return 'ios-firefox';
+    if (/EdgiOS|Edg\//i.test(ua)) return 'ios-edge';
+    return 'ios-safari';
+  }
+  if (/SamsungBrowser/i.test(ua)) return 'samsung';
+  if (/Firefox/i.test(ua)) return 'firefox';
+  if (/Edg\//i.test(ua)) return 'edge';
+  if (/OPR\/|Opera/i.test(ua)) return 'opera';
+  if (/Chrome/i.test(ua)) return 'chrome';
+  return 'other';
+}
+
+function installInstructions() {
+  const kind = browserKind();
+  if (kind.startsWith('ios-')) {
+    const opener = kind === 'ios-chrome'
+      ? 'Tap Share in Chrome'
+      : kind === 'ios-firefox'
+        ? 'Tap the menu, then Share'
+        : kind === 'ios-edge'
+          ? 'Tap Share in Edge'
+          : 'Tap the Share button ' + SHARE_ICON + ' at the bottom of Safari';
+    return [
+      opener,
+      'Scroll the share sheet and tap <strong>Add to Home Screen</strong>',
+      'Tap <strong>Add</strong>'
+    ];
+  }
+  if (kind === 'firefox') {
+    return [
+      'Tap the menu button (⋮)',
+      'Tap <strong>Install</strong> or <strong>Add to Home screen</strong>',
+      'Confirm to add Pipe Sizer'
+    ];
+  }
+  if (kind === 'samsung') {
+    return [
+      'Tap the menu button (⋮)',
+      'Tap <strong>Add page to</strong>, then <strong>Home screen</strong>',
+      'Confirm to add Pipe Sizer'
+    ];
+  }
+  if (kind === 'opera') {
+    return [
+      'Tap the Opera menu',
+      'Tap <strong>Add to home screen</strong>',
+      'Confirm to add Pipe Sizer'
+    ];
+  }
+  return [
+    'Tap the browser menu (⋮)',
+    'Tap <strong>Install app</strong> or <strong>Add to Home screen</strong>',
+    'Confirm to add Pipe Sizer'
+  ];
+}
+
+function showInstallHeaderButton(show) {
+  const btn = document.getElementById('installHeaderBtn');
+  if (!btn) return;
+  btn.classList.toggle('visible', !!show);
+}
+
+function renderInstallSteps() {
+  const steps = document.getElementById('installSteps');
+  const lead = document.getElementById('installLead');
+  const primary = document.getElementById('installPrimaryBtn');
+  const kind = browserKind();
+  const canNative = !!deferredInstallPrompt;
+
+  const secondary = document.querySelector('.install-secondary');
+  if (canNative) {
+    lead.textContent = 'Install this sizer as an app on your phone. You can open it from the Home Screen, including offline.';
+    steps.classList.remove('visible');
+    steps.innerHTML = '';
+    primary.textContent = 'Add to Home Screen';
+    primary.style.display = '';
+    if (secondary) secondary.textContent = 'Not now';
+    return;
+  }
+
+  if (kind.startsWith('ios-')) {
+    lead.textContent = 'iPhone and iPad browsers cannot open the Add to Home Screen dialog automatically. Use these steps:';
+  } else {
+    lead.textContent = 'This browser cannot open the install dialog automatically. Use these steps:';
+  }
+  steps.innerHTML = installInstructions().map((text, i) =>
+    `<li><span class="install-step-num">${i + 1}</span><span>${text}</span></li>`
+  ).join('');
+  steps.classList.add('visible');
+  primary.style.display = 'none';
+  if (secondary) secondary.textContent = 'Got it';
+}
+
+function openInstallPrompt() {
+  if (isStandaloneApp()) return;
+  renderInstallSteps();
+  document.getElementById('installOverlay').classList.add('open');
+}
+
+function dismissInstallPrompt() {
+  document.getElementById('installOverlay').classList.remove('open');
+}
+
+async function handleInstallPrimary() {
+  if (deferredInstallPrompt) {
+    deferredInstallPrompt.prompt();
+    let outcome = '';
+    try {
+      const choice = await deferredInstallPrompt.userChoice;
+      outcome = choice && choice.outcome;
+    } catch (e) {}
+    deferredInstallPrompt = null;
+    dismissInstallPrompt();
+    if (outcome === 'accepted') showInstallHeaderButton(false);
+    return;
+  }
+  renderInstallSteps();
+}
+
+function setupInstallPrompt() {
+  if (isStandaloneApp() || !isMobileDevice()) {
+    showInstallHeaderButton(false);
+    return;
+  }
+
+  showInstallHeaderButton(true);
+
+  window.addEventListener('beforeinstallprompt', (event) => {
+    event.preventDefault();
+    deferredInstallPrompt = event;
+    if (document.getElementById('installOverlay').classList.contains('open')) {
+      renderInstallSteps();
+    }
+  });
+
+  window.addEventListener('appinstalled', () => {
+    deferredInstallPrompt = null;
+    dismissInstallPrompt();
+    showInstallHeaderButton(false);
+  });
+
+  setTimeout(openInstallPrompt, 600);
+}
+
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js').catch(() => {});
+  });
+}
+
+setupInstallPrompt();
 
 </script>
 </body>

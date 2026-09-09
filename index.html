@@ -13,6 +13,7 @@
 <title>HVAC Pipe Sizer | LTHW & CHW</title>
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="icons/icon-32.png">
 <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
 <link rel="icon" type="image/svg+xml" href="icons/icon.svg">
 
@@ -317,6 +318,13 @@ input[readonly]:focus {
 }
 .adv-card.ss .adv-dn { color: var(--ss); }
 .adv-card.cs .adv-dn { color: var(--cs); }
+.adv-sub {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--muted);
+  margin: 2px 0 7px;
+  line-height: 1.45;
+}
 .adv-margin {
   display: inline-block;
   font-size: 0.75rem;
@@ -376,6 +384,35 @@ input[readonly]:focus {
   color: var(--text);
   margin-top: 2px;
   font-weight: 600;
+}
+.check-dims {
+  display: block;
+  font-size: 0.72rem;
+  color: var(--muted);
+  margin-top: 5px;
+  line-height: 1.5;
+}
+
+.jump-nav {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+}
+.jump-nav a {
+  flex: 1;
+  text-align: center;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--muted);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 7px 4px;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.jump-nav a:hover, .jump-nav a:active {
+  color: var(--accent);
+  border-color: var(--accent);
 }
 
 .pa-note {
@@ -612,7 +649,67 @@ tr.rec td { border-bottom-color: transparent; }
 
 .visc-row { margin-bottom: 10px; }
 
+/* Mobile — the tables become one card per size so nothing scrolls sideways */
+@media (max-width: 600px) {
+  .table-wrap { overflow-x: visible; margin: 0; padding: 0; }
+  #tableSs, #tableCs { min-width: 0; }
+  #tableSs thead, #tableCs thead { display: none; }
+  #tableSs tbody, #tableCs tbody { display: block; }
+  #tableSs tr, #tableCs tr {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 5px 10px;
+    background: var(--input-bg);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 10px 12px;
+    margin-bottom: 8px;
+  }
+  #tableSs tr:last-child, #tableCs tr:last-child { margin-bottom: 2px; }
+  #tableSs td, #tableCs td {
+    border-bottom: none;
+    padding: 0;
+    white-space: normal;
+    text-align: left;
+  }
+  #tableSs td.c-size, #tableCs td.c-size {
+    grid-column: 1;
+    grid-row: 1;
+    font-weight: 700;
+    font-size: 0.92rem;
+  }
+  #tableSs td.c-status, #tableCs td.c-status {
+    grid-column: 2;
+    grid-row: 1;
+    text-align: right;
+    align-self: start;
+  }
+  #tableSs td.c-num, #tableCs td.c-num { font-size: 0.95rem; font-weight: 600; }
+  #tableSs td.c-num::before, #tableCs td.c-num::before {
+    content: attr(data-label);
+    display: block;
+    font-size: 0.6rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--muted);
+  }
+  #tableSs tr.rec, #tableCs tr.rec { border-width: 2px; padding: 9px 11px; }
+  #tableSs tr.highlight-ss {
+    border-color: var(--ss);
+    background: linear-gradient(180deg, var(--ss-bg), transparent), var(--input-bg);
+  }
+  #tableCs tr.highlight-cs {
+    border-color: var(--cs);
+    background: linear-gradient(180deg, var(--cs-bg), transparent), var(--input-bg);
+  }
+}
+
 /* Mobile */
+@media (max-width: 560px) {
+  .basis-grid { grid-template-columns: 1fr; }
+  .check-result { grid-template-columns: 1fr; }
+}
 @media (max-width: 520px) {
   .visc-row { grid-template-columns: 1fr; }
 }
@@ -758,25 +855,33 @@ tr.rec td { border-bottom-color: transparent; }
       <div class="adv-card ss">
         <div class="adv-label" id="recSsLabel">304 SS Tru-Bore Metric</div>
         <div class="adv-dn" id="recSs">—</div>
+        <div class="adv-sub" id="subSs">—</div>
         <div class="adv-margin" id="marginSs">—</div>
       </div>
       <div class="adv-card cs">
         <div class="adv-label" id="recCsLabel">Carbon steel light wall</div>
         <div class="adv-dn" id="recCs">—</div>
+        <div class="adv-sub" id="subCs">—</div>
         <div class="adv-margin" id="marginCs">—</div>
       </div>
     </div>
     <button class="copy-btn" id="copyBtn" onclick="copyResults()">Copy results</button>
+    <nav class="jump-nav" aria-label="Jump to section">
+      <a href="#cardSs">SS table</a>
+      <a href="#cardCs">CS table</a>
+      <a href="#cardCheck">Check size</a>
+      <a href="#cardBasis">Basis</a>
+    </nav>
   </div>
 
-  <div class="card">
+  <div class="card" id="cardBasis">
     <div class="card-title">Calculation basis</div>
     <p class="note" style="margin-bottom:10px;">What the recommended sizes actually used. Straight pipe only — no fittings, single leg.</p>
     <div class="basis-grid" id="basisGrid"></div>
   </div>
 
   <!-- Reverse lookup -->
-  <div class="card">
+  <div class="card" id="cardCheck">
     <div class="card-title">Check existing size</div>
     <label>Select DN to see its capacity under current settings</label>
     <select id="checkDn" onchange="updateCheck()">
@@ -799,13 +904,13 @@ tr.rec td { border-bottom-color: transparent; }
     </select>
     <div class="check-card" id="checkResult" style="display:none;">
       <div class="check-result">
-        <div>SS True Bore<br><strong id="checkSs">—</strong></div>
-        <div>CS light wall<br><strong id="checkCs">—</strong></div>
+        <div>SS True Bore<br><strong id="checkSs">—</strong><span class="check-dims" id="checkSsDims"></span></div>
+        <div>CS light wall<br><strong id="checkCs">—</strong><span class="check-dims" id="checkCsDims"></span></div>
       </div>
     </div>
   </div>
 
-  <div class="card">
+  <div class="card" id="cardSs">
     <div class="card-title" id="tableSsTitle">304 Stainless Tru-Bore Metric</div>
     <div class="table-wrap">
       <table id="tableSs">
@@ -824,7 +929,7 @@ tr.rec td { border-bottom-color: transparent; }
     </div>
   </div>
 
-  <div class="card">
+  <div class="card" id="cardCs">
     <div class="card-title" id="tableCsTitle">Carbon steel light wall</div>
     <div class="table-wrap">
       <table id="tableCs">
@@ -879,7 +984,7 @@ tr.rec td { border-bottom-color: transparent; }
     <div class="card-title">Notes & Assumptions</div>
     <p class="note">
       <strong>Straight pipe only</strong> at the selected Pa/m limit (CIBSE typical upper guidance 300 Pa/m). Add fittings, valves, strainers and elevation separately.<br><br>
-      Pipe tables: Tru-Bore Metric (ID = DN) and carbon steel light wall (OD, wall, ID and kg/m as tabulated; DN100 ID = 107.1 mm).<br>
+      Pipe tables: 304L Tru-Bore Metric and carbon steel light wall (OD, wall, ID and kg/m as tabulated; hydraulics use the ID).<br>
       Darcy–Weisbach with Colebrook–White via Swamee–Jain; laminar f = 64/Re below Re 2300.<br>
       Water viscosity is temperature-corrected at the mean operating temperature. Density and specific heat from the toolchain polynomial fits at that same temperature.<br>
       Velocities highlighted in amber when &gt; 3 m/s (check noise / erosion).<br>
@@ -890,12 +995,24 @@ tr.rec td { border-bottom-color: transparent; }
 
 <script>
 // ========== PIPE TABLES (toolchain) ==========
-// Tru-Bore Metric: ID equals DN.
-// Carbon: light-wall table (OD, wall, ID, kg/m). ID = OD - 2*wall.
+// 304L Tru-Bore Metric: ID equals DN. OD / wall / kg/m as tabulated.
+// DN15, DN32 and DN300 are from the published Tru-Bore metric range
+// (OD 18 / 35 / 304, 0.62 / 1.26 / 15.12 kg/m) — confirm against stock.
 const SS_PIPES = [
-  {dn:15, id:15}, {dn:20, id:20}, {dn:25, id:25}, {dn:32, id:32}, {dn:40, id:40},
-  {dn:50, id:50}, {dn:65, id:65}, {dn:80, id:80}, {dn:100, id:100}, {dn:125, id:125},
-  {dn:150, id:150}, {dn:200, id:200}, {dn:250, id:250}, {dn:300, id:300}
+  {dn:15,  od:18,  wall:1.5, id:15,  kgm:0.62},
+  {dn:20,  od:23,  wall:1.5, id:20,  kgm:0.81},
+  {dn:25,  od:28,  wall:1.5, id:25,  kgm:0.99},
+  {dn:32,  od:35,  wall:1.5, id:32,  kgm:1.26},
+  {dn:40,  od:43,  wall:1.5, id:40,  kgm:1.56},
+  {dn:50,  od:53,  wall:1.5, id:50,  kgm:1.93},
+  {dn:65,  od:69,  wall:2.0, id:65,  kgm:3.30},
+  {dn:80,  od:84,  wall:2.0, id:80,  kgm:4.10},
+  {dn:100, od:104, wall:2.0, id:100, kgm:5.01},
+  {dn:125, od:129, wall:2.0, id:125, kgm:6.35},
+  {dn:150, od:154, wall:2.0, id:150, kgm:7.60},
+  {dn:200, od:204, wall:2.0, id:200, kgm:10.30},
+  {dn:250, od:254, wall:2.0, id:250, kgm:12.60},
+  {dn:300, od:304, wall:2.0, id:300, kgm:15.12}
 ];
 const CS_PIPES = [
   {dn:15,  od:21.3,  wall:2.0, id:17.3,  kgm:0.947},
@@ -1193,8 +1310,8 @@ function renderBasis(data, recSs, recCs) {
   const warn = document.getElementById('muWarn');
   if (warn) warn.style.display = b.muWarning ? '' : 'none';
   const rows = [
-    ['SS internal diameter', 'DN' + recSs.item.dn + ' (' + recSs.item.id.toFixed(1) + ' mm) · ' + recSs.item.table],
-    ['CS size', csSizeLine(recCs.item) + ' · ' + recCs.item.table],
+    ['SS size', pipeSizeLine(recSs.item) + ' · ' + pipeSizeMeta(recSs.item) + ' · ' + recSs.item.table],
+    ['CS size', pipeSizeLine(recCs.item) + ' · ' + pipeSizeMeta(recCs.item) + ' · ' + recCs.item.table],
     ['Absolute roughness ε', 'SS ' + recSs.item.eps_mm.toFixed(3) + ' mm · CS ' + recCs.item.eps_mm.toFixed(3) + ' mm (' + condLabel(data.cond) + ')'],
     ['Density ρ', b.rho.toFixed(1) + ' kg/m³ · derived from mean ' + b.mean.toFixed(1) + ' °C'],
     ['Dynamic viscosity µ', b.mu.toExponential(4) + ' Pa·s · ' + b.muSource],
@@ -1219,8 +1336,10 @@ function recalc() {
 
   const recSs = findRecommended(data.ss, requiredLps);
   const recCs = findRecommended(data.cs, requiredLps);
-  document.getElementById('recSs').textContent = 'DN' + recSs.item.dn + ' (' + recSs.item.id.toFixed(1) + ' mm)';
-  document.getElementById('recCs').textContent = csSizeLine(recCs.item);
+  document.getElementById('recSs').textContent = 'DN' + recSs.item.dn;
+  document.getElementById('subSs').textContent = pipeDimsShort(recSs.item);
+  document.getElementById('recCs').textContent = 'DN' + recCs.item.dn;
+  document.getElementById('subCs').textContent = pipeDimsShort(recCs.item);
 
   const mSs = statusText(recSs.item, requiredLps, data.limit);
   const mCs = statusText(recCs.item, requiredLps, data.limit);
@@ -1243,13 +1362,18 @@ function formatKg(kg) {
   return kg >= 10 ? kg.toFixed(2) : kg.toFixed(3);
 }
 
-function csSizeLine(p) {
+function pipeSizeLine(p) {
   return 'DN' + p.dn + ' (ID ' + p.id.toFixed(1) + ' mm)';
 }
 
-function csSizeMeta(p) {
+function pipeSizeMeta(p) {
   if (!(p.od > 0)) return '';
   return 'OD ' + p.od.toFixed(1) + ' · wall ' + p.wall.toFixed(1) + ' · ' + formatKg(p.kgm) + ' kg/m';
+}
+
+function pipeDimsShort(p) {
+  if (!(p.od > 0)) return 'ID ' + p.id.toFixed(1) + ' mm';
+  return 'ID ' + p.id.toFixed(1) + ' · OD ' + p.od.toFixed(1) + ' · ' + formatKg(p.kgm) + ' kg/m';
 }
 
 function renderTable(tableId, arr, req, recIdx, limit) {
@@ -1261,16 +1385,15 @@ function renderTable(tableId, arr, req, recIdx, limit) {
     if (i === recIdx) tr.classList.add('rec', tableId === 'tableSs' ? 'highlight-ss' : 'highlight-cs');
     const velClass = p.v > 3.0 ? 'vel-warn' : '';
     const pdClass = p.pd > limit ? 'vel-warn' : '';
-    const sizeHtml = p.od
-      ? csSizeLine(p) + '<span class="size-meta">' + csSizeMeta(p) + '</span>'
-      : 'DN' + p.dn + ' (' + p.id.toFixed(1) + ' mm)';
+    const sizeHtml = pipeSizeLine(p)
+      + (p.od ? '<span class="size-meta">' + pipeSizeMeta(p) + '</span>' : '');
     tr.innerHTML =
-      '<td>' + sizeHtml + '</td>' +
-      '<td>' + p.lps.toFixed(2) + (p.bound === 'vel' ? ' *' : '') + '</td>' +
-      '<td>' + (p.kw < 10 ? p.kw.toFixed(1) : Math.round(p.kw)) + '</td>' +
-      '<td class="' + velClass + '">' + p.v.toFixed(2) + '</td>' +
-      '<td class="' + pdClass + '">' + (req > 0 ? p.pd.toFixed(0) : '—') + '</td>' +
-      '<td><span class="status-pill ' + st.cls + '">' + st.text + '</span></td>';
+      '<td class="c-size">' + sizeHtml + '</td>' +
+      '<td class="c-num" data-label="Max L/s">' + p.lps.toFixed(2) + (p.bound === 'vel' ? ' *' : '') + '</td>' +
+      '<td class="c-num" data-label="Max kW">' + (p.kw < 10 ? p.kw.toFixed(1) : Math.round(p.kw)) + '</td>' +
+      '<td class="c-num ' + velClass + '" data-label="Vel m/s">' + p.v.toFixed(2) + '</td>' +
+      '<td class="c-num ' + pdClass + '" data-label="Pa/m">' + (req > 0 ? p.pd.toFixed(0) : '—') + '</td>' +
+      '<td class="c-status"><span class="status-pill ' + st.cls + '">' + st.text + '</span></td>';
     tbody.appendChild(tr);
   });
 }
@@ -1288,10 +1411,11 @@ function updateCheck() {
   document.getElementById('checkSs').textContent = ss
     ? ss.lps.toFixed(2) + ' L/s  ·  ' + (ss.kw < 10 ? ss.kw.toFixed(1) : Math.round(ss.kw)) + ' kW  ·  ' + ss.pd.toFixed(0) + ' Pa/m'
     : '—';
+  document.getElementById('checkSsDims').textContent = ss && ss.od ? pipeSizeLine(ss) + ' · ' + pipeSizeMeta(ss) : '';
   document.getElementById('checkCs').textContent = cs
     ? cs.lps.toFixed(2) + ' L/s  ·  ' + (cs.kw < 10 ? cs.kw.toFixed(1) : Math.round(cs.kw)) + ' kW  ·  ' + cs.pd.toFixed(0) + ' Pa/m'
-      + (cs.od ? '  ·  ' + csSizeMeta(cs) : '')
     : '—';
+  document.getElementById('checkCsDims').textContent = cs && cs.od ? pipeSizeLine(cs) + ' · ' + pipeSizeMeta(cs) : '';
   resultEl.style.display = 'block';
 }
 
@@ -1335,9 +1459,9 @@ function copyResults() {
   const g = document.getElementById('glycol').value;
   const sysLabel = system === 'LTHW' ? 'LTHW/LPHW' : 'CHW';
   const glycolText = (system === 'CHW' && g !== '0') ? ` + ${g}% EG` : '';
-  const recSs = document.getElementById('recSs').textContent;
+  const recSs = document.getElementById('recSs').textContent + ' (' + document.getElementById('subSs').textContent + ')';
   const marginSs = document.getElementById('marginSs').textContent;
-  const recCs = document.getElementById('recCs').textContent;
+  const recCs = document.getElementById('recCs').textContent + ' (' + document.getElementById('subCs').textContent + ')';
   const marginCs = document.getElementById('marginCs').textContent;
 
   const text = `${sysLabel} ${dt} K${glycolText} @ ${pa} Pa/m

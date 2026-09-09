@@ -198,7 +198,7 @@ label {
   letter-spacing: 0.04em;
 }
 
-select, input[type="number"] {
+select, input[type="number"], input[type="text"] {
   width: 100%;
   background: var(--input-bg);
   border: 1px solid var(--border);
@@ -214,6 +214,14 @@ select:focus, input:focus {
   outline: none;
   border-color: var(--accent);
   box-shadow: 0 0 0 3px var(--accent-soft);
+}
+input[readonly] {
+  cursor: default;
+  opacity: 0.92;
+}
+input[readonly]:focus {
+  border-color: var(--border);
+  box-shadow: none;
 }
 
 .row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
@@ -595,7 +603,12 @@ tr.rec td { border-bottom-color: transparent; }
   margin: 0 2px;
 }
 
+.visc-row { margin-bottom: 10px; }
+
 /* Mobile */
+@media (max-width: 520px) {
+  .visc-row { grid-template-columns: 1fr; }
+}
 @media (max-width: 420px) {
   .adv-dn { font-size: 1.6rem; }
   .big-input { font-size: 1.4rem !important; }
@@ -671,13 +684,10 @@ tr.rec td { border-bottom-color: transparent; }
     <!-- Hidden fields still used by the calculation logic -->
     <input type="hidden" id="meanTemp" value="70">
 
-    <div class="row" style="margin-bottom:10px;">
+    <div class="row visc-row">
       <div>
         <label>Viscosity</label>
-        <select id="viscosityMode" onchange="onViscosityModeChange()">
-          <option value="temperature">Temperature-corrected — use this</option>
-          <option value="fixed">Legacy fixed 0.00131 Pa·s — old calcs only</option>
-        </select>
+        <input type="text" id="viscosityLabel" value="Temperature corrected" readonly tabindex="-1" aria-readonly="true">
       </div>
       <div>
         <label>Pipe condition</label>
@@ -689,11 +699,9 @@ tr.rec td { border-bottom-color: transparent; }
       </div>
     </div>
     <p class="note" id="viscNote">
-      <strong>Use temperature-corrected</strong> for design. Water gets much thinner as it heats, so LTHW/LPHW at 70 °C is about 0.00040 Pa·s, not 0.00131. The old tool used one fixed figure (water at ~10 °C) for every system, which overstated LTHW pressure drop by about 14% and could pick a size too large.<br>
-      <strong>Legacy fixed</strong> is only there if you need to match an older calculation. You do not need it for new work.<br>
-      Derived µ is for water only. Glycol is a ratio on that water figure, not a full glycol correlation.
+      Water viscosity is taken from the mean fluid temperature. Glycol, if selected, is applied as a ratio on that water figure.
     </p>
-    <p class="mu-warn" id="muWarn" style="display:none;">Mean temperature is outside 0–100 °C, so viscosity has fallen back to the legacy fixed value.</p>
+    <p class="mu-warn" id="muWarn" style="display:none;">Mean temperature is outside 0–100 °C. Viscosity is calculated at the nearest limit of that range.</p>
     <div class="row" style="margin-bottom:10px;">
       <div>
         <label>Pressure drop limit</label>
@@ -865,7 +873,7 @@ tr.rec td { border-bottom-color: transparent; }
       <strong>Straight pipe only</strong> at the selected Pa/m limit (CIBSE typical upper guidance 300 Pa/m). Add fittings, valves, strainers and elevation separately.<br><br>
       Pipe tables: Tru-Bore Metric (ID = DN) and carbon steel BS EN 10255 Medium (DN100 = 105.3 mm).<br>
       Darcy–Weisbach with Colebrook–White via Swamee–Jain; laminar f = 64/Re below Re 2300.<br>
-      Density and specific heat from the toolchain polynomial fits at mean operating temperature.<br>
+      Water viscosity is temperature-corrected at the mean operating temperature. Density and specific heat from the toolchain polynomial fits at that same temperature.<br>
       Velocities highlighted in amber when &gt; 3 m/s (check noise / erosion).<br>
       Ethylene Glycol = Mono Ethylene Glycol (MEG). Propylene glycol is different and more viscous.
     </p>
@@ -892,7 +900,6 @@ const ROUGHNESS_MM = {
   corroded: { stainless: 0.060, carbon: 0.500 }
 };
 
-const LEGACY_MU = 0.00131;
 const V_MIN = 0.3;
 const V_MAX = 3.0;
 
@@ -991,24 +998,24 @@ function waterRho(T) {
 function waterCp(T) {
   return (((1.606849e-09 * T - 4.736562e-07) * T + 5.721385e-05) * T - 2.586464e-03) * T + 4.215269;
 }
+function clampTempC(T_C) {
+  if (!(T_C >= 0)) return 0;
+  if (T_C > 100) return 100;
+  return T_C;
+}
+
 function waterMuDerived(T_C) {
-  const T_K = T_C + 273.15;
+  const T_K = clampTempC(T_C) + 273.15;
   return 2.414e-5 * Math.pow(10, 247.8 / (T_K - 140));
 }
 
-function viscosityMode() {
-  const el = document.getElementById('viscosityMode');
-  return (el && el.value === 'fixed') ? 'fixed' : 'temperature';
-}
-
-function resolveMu(T_C, mode) {
-  if (mode === 'temperature') {
-    if (!(T_C >= 0 && T_C <= 100)) {
-      return { mu: LEGACY_MU, source: 'legacy fixed', warning: true };
-    }
-    return { mu: waterMuDerived(T_C), source: 'derived', warning: false };
-  }
-  return { mu: LEGACY_MU, source: 'legacy fixed', warning: false };
+function resolveMu(T_C) {
+  const inRange = T_C >= 0 && T_C <= 100;
+  return {
+    mu: waterMuDerived(T_C),
+    source: 'temperature corrected',
+    warning: !inRange
+  };
 }
 
 function glycolProps(pct) {
@@ -1017,8 +1024,7 @@ function glycolProps(pct) {
 
 function fluidBasis() {
   const { dt, mean } = getEffectiveTemps();
-  const mode = viscosityMode();
-  const muRes = resolveMu(mean, mode);
+  const muRes = resolveMu(mean);
   const pct = (system === 'CHW') ? (parseInt(document.getElementById('glycol').value) || 0) : 0;
   const g = glycolProps(pct);
   const w0 = glycolProps(0);
@@ -1026,7 +1032,7 @@ function fluidBasis() {
   const cp = waterCp(mean) * (g[1] / w0[1]);
   const mu = muRes.mu * (g[2] / w0[2]);
   const muSource = pct ? (muRes.source + ' × glycol ratio') : muRes.source;
-  return { dt, mean, rho, cp, mu, muSource, muWarning: muRes.warning, glycolPct: pct, viscosityMode: mode };
+  return { dt, mean, rho, cp, mu, muSource, muWarning: muRes.warning, glycolPct: pct };
 }
 
 function pipeCondition() {
@@ -1260,7 +1266,7 @@ function updateStraightCheck() {
     out.innerHTML = '';
     return;
   }
-  const muRes = resolveMu(T, viscosityMode());
+  const muRes = resolveMu(T);
   const rho = waterRho(T);
   const eps_mm = spec[0] === 'smooth' ? 0 : roughnessMm(spec[0], spec[1] || 'new');
   const r = calcPD(lps / 1000, bore / 1000, rho, muRes.mu, eps_mm / 1000);
@@ -1272,12 +1278,6 @@ function updateStraightCheck() {
     '<div>µ used<strong>' + muRes.mu.toExponential(4) + ' Pa·s</strong></div>' +
     '<div>ε<strong>' + eps_mm.toFixed(3) + ' mm · ' + muRes.source + '</strong></div>';
 }
-
-function onViscosityModeChange() {
-  saveSettings();
-  recalc();
-}
-
 
 function copyResults() {
   const factor = getCapacityFactor();
@@ -1343,7 +1343,6 @@ function saveSettings() {
       returnTemp: document.getElementById('returnTemp').value,
       paTarget: document.getElementById('paTarget').value,
       glycol: document.getElementById('glycol').value,
-      viscosityMode: viscosityMode(),
       pipeCondition: pipeCondition(),
       input: document.getElementById('mainInput').value,
       theme: document.documentElement.getAttribute('data-theme') || 'dark'
@@ -1362,8 +1361,6 @@ function loadSettings() {
       document.getElementById('themeBtn').textContent = s.theme === 'dark' ? '🌙' : '☀️';
     }
     if (s.pipeCondition) document.getElementById('pipeCondition').value = s.pipeCondition;
-    document.getElementById('viscosityMode').value =
-      s.viscosityMode === 'fixed' ? 'fixed' : 'temperature';
     if (s.system) setSystem(s.system);
     if (s.tempMode) setTempMode(s.tempMode);
     if (s.meanTemp) document.getElementById('meanTemp').value = s.meanTemp;
@@ -1382,7 +1379,6 @@ function loadSettings() {
 // Init
 const loaded = loadSettings();
 if (!loaded) {
-  document.getElementById('viscosityMode').value = 'temperature';
   setSystem('LTHW');
 }
 recalc();

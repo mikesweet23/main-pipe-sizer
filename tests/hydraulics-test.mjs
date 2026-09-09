@@ -1,24 +1,28 @@
 /* Acceptance tests from the pipework sizer change specification.
-   Reference: 16 l/s, 100.0 mm ID, stainless new ε = 0.015 mm. Tolerance ±1%. */
-const LEGACY_MU = 0.00131;
-
+   Reference: 16 l/s, 100.0 mm ID, stainless new ε = 0.015 mm. Tolerance ±1%.
+   Viscosity is always temperature-corrected (Al-Shemmeri, clamped 0–100 °C). */
 function waterRho(T) {
   return ((1.051865e-05 * T - 5.171329e-03) * T - 6.179237e-03) * T + 1000.068;
 }
 
+function clampTempC(T_C) {
+  if (!(T_C >= 0)) return 0;
+  if (T_C > 100) return 100;
+  return T_C;
+}
+
 function waterMuDerived(T_C) {
-  const T_K = T_C + 273.15;
+  const T_K = clampTempC(T_C) + 273.15;
   return 2.414e-5 * Math.pow(10, 247.8 / (T_K - 140));
 }
 
-function resolveMu(T_C, mode) {
-  if (mode === 'temperature') {
-    if (!(T_C >= 0 && T_C <= 100)) {
-      return { mu: LEGACY_MU, source: 'legacy fixed', warning: true };
-    }
-    return { mu: waterMuDerived(T_C), source: 'derived', warning: false };
-  }
-  return { mu: LEGACY_MU, source: 'legacy fixed', warning: false };
+function resolveMu(T_C) {
+  const inRange = T_C >= 0 && T_C <= 100;
+  return {
+    mu: waterMuDerived(T_C),
+    source: 'temperature corrected',
+    warning: !inRange
+  };
 }
 
 function calcPD(flow_m3s, id_m, rho, mu, eps_m) {
@@ -58,18 +62,10 @@ ok(within(v, 2.037), 'Test 1 velocity ' + v.toFixed(4) + ' m/s ≈ 2.037');
 
 {
   const rho = waterRho(5);
-  const mu = resolveMu(5, 'fixed').mu;
-  const r = calcPD(Q, id_m, rho, mu, eps);
-  ok(within(r.Re, 155500), 'Test 2 Re ' + r.Re.toFixed(0) + ' ≈ 155500');
-  ok(within(r.f, 0.01741), 'Test 2 f ' + r.f.toFixed(5) + ' ≈ 0.01741');
-  ok(within(r.pd, 361), 'Test 2 Δp/m ' + r.pd.toFixed(1) + ' ≈ 361');
-}
-
-{
-  const rho = waterRho(5);
-  const muRes = resolveMu(5, 'temperature');
+  const muRes = resolveMu(5);
   const r = calcPD(Q, id_m, rho, muRes.mu, eps);
   ok(within(muRes.mu, 0.0015), 'Test 3 µ ' + muRes.mu.toFixed(6) + ' ≈ 0.001500');
+  ok(muRes.source === 'temperature corrected', 'Test 3 source is temperature corrected');
   ok(within(r.Re, 135800), 'Test 3 Re ' + r.Re.toFixed(0) + ' ≈ 135800');
   ok(within(r.f, 0.01779), 'Test 3 f ' + r.f.toFixed(5) + ' ≈ 0.01779');
   ok(within(r.pd, 369), 'Test 3 Δp/m ' + r.pd.toFixed(1) + ' ≈ 369');
@@ -77,17 +73,15 @@ ok(within(v, 2.037), 'Test 1 velocity ' + v.toFixed(4) + ' m/s ≈ 2.037');
 
 {
   const rho = waterRho(70);
-  const muRes = resolveMu(70, 'temperature');
+  const muRes = resolveMu(70);
   const rT = calcPD(Q, id_m, rho, muRes.mu, eps);
-  const rF = calcPD(Q, id_m, rho, resolveMu(70, 'fixed').mu, eps);
   ok(within(muRes.mu, 0.0004), 'Test 4 µ ' + muRes.mu.toFixed(6) + ' ≈ 0.000400');
   ok(within(rT.pd, 305), 'Test 4 temperature Δp/m ' + rT.pd.toFixed(1) + ' ≈ 305');
-  ok(within(rF.pd, 354), 'Test 4 fixed Δp/m ' + rF.pd.toFixed(1) + ' ≈ 354');
 }
 
 {
   const rho = waterRho(5);
-  const r = calcPD(Q, id_m, rho, resolveMu(5, 'temperature').mu, 0);
+  const r = calcPD(Q, id_m, rho, resolveMu(5).mu, 0);
   // Swamee–Jain at ε = 0 is ~349 Pa/m. The third-party smooth-pipe
   // figure of 353 Pa/m uses a slightly higher f (0.0170 vs 0.0168).
   ok(within(r.pd, 349, 0.015), 'Test 6 Swamee–Jain ε=0 Δp/m ' + r.pd.toFixed(1) + ' ≈ 349');
@@ -95,9 +89,12 @@ ok(within(v, 2.037), 'Test 1 velocity ' + v.toFixed(4) + ' m/s ≈ 2.037');
 }
 
 {
-  const missing = {};
-  const mode = missing.viscosityMode === 'temperature' ? 'temperature' : 'fixed';
-  ok(mode === 'fixed', 'Test 5 missing viscosityMode loads as fixed');
+  const low = resolveMu(-10);
+  const high = resolveMu(140);
+  ok(within(low.mu, waterMuDerived(0)), 'Out-of-range low T clamps to 0 °C');
+  ok(low.warning, 'Out-of-range low T sets warning');
+  ok(within(high.mu, waterMuDerived(100)), 'Out-of-range high T clamps to 100 °C');
+  ok(high.warning, 'Out-of-range high T sets warning');
 }
 
 if (failed) {

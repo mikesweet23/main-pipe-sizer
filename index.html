@@ -308,7 +308,9 @@ input[readonly]:focus {
   color: var(--muted);
   text-transform: uppercase;
   letter-spacing: 0.05em;
+  text-wrap: balance;
 }
+.sym { text-transform: none; }
 .adv-dn {
   font-size: 1.9rem;
   font-weight: 800;
@@ -714,6 +716,7 @@ tr.rec td { border-bottom-color: transparent; }
   .visc-row { grid-template-columns: 1fr; }
 }
 @media (max-width: 420px) {
+  .adv-label { font-size: 0.58rem; letter-spacing: 0.03em; }
   .adv-dn { font-size: 1.6rem; }
   .big-input { font-size: 1.4rem !important; }
   body { padding: 12px 10px 36px; }
@@ -1295,14 +1298,18 @@ function condLabel(cond) {
   return cond === 'used' ? 'used' : cond === 'corroded' ? 'corroded' : 'new';
 }
 
+function symHtml(s) {
+  return s.replace(/(ε|ρ|µ)/g, '<span class="sym">$1</span>');
+}
+
 function updateMaterialLabels(cond) {
   const ssE = roughnessMm('stainless', cond);
   const csE = roughnessMm('carbon', cond);
   const lab = condLabel(cond);
-  document.getElementById('tableSsTitle').textContent = '304 Stainless Tru-Bore Metric — ε ' + ssE.toFixed(3) + ' mm (' + lab + ')';
-  document.getElementById('tableCsTitle').textContent = CS_TABLE_NAME + ' — ε ' + csE.toFixed(3) + ' mm (' + lab + ')';
-  document.getElementById('recSsLabel').textContent = '304 SS Tru-Bore · ε ' + ssE.toFixed(3) + ' mm';
-  document.getElementById('recCsLabel').textContent = 'Carbon light wall · ε ' + csE.toFixed(3) + ' mm';
+  document.getElementById('tableSsTitle').innerHTML = symHtml('304 Stainless Tru-Bore Metric — ε ' + ssE.toFixed(3) + ' mm (' + lab + ')');
+  document.getElementById('tableCsTitle').innerHTML = symHtml(CS_TABLE_NAME + ' — ε ' + csE.toFixed(3) + ' mm (' + lab + ')');
+  document.getElementById('recSsLabel').innerHTML = symHtml('304 SS Tru-Bore · ε ' + ssE.toFixed(3) + ' mm');
+  document.getElementById('recCsLabel').innerHTML = symHtml('Carbon light wall · ε ' + csE.toFixed(3) + ' mm');
 }
 
 function renderBasis(data, recSs, recCs) {
@@ -1322,7 +1329,7 @@ function renderBasis(data, recSs, recCs) {
     ['Straight-pipe Δp / fittings Δp', (recSs.item.pd / 1000).toFixed(3) + ' kPa / 0 kPa (SS) · ' + (recCs.item.pd / 1000).toFixed(3) + ' kPa / 0 kPa (CS)']
   ];
   document.getElementById('basisGrid').innerHTML = rows.map(r =>
-    '<div><dt>' + r[0] + '</dt><dd>' + r[1] + '</dd></div>'
+    '<div><dt>' + symHtml(r[0]) + '</dt><dd>' + r[1] + '</dd></div>'
   ).join('');
 }
 

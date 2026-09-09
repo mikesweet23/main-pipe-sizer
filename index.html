@@ -454,32 +454,6 @@ tr.rec td { border-bottom-color: transparent; }
 .basis-grid dd { color: var(--text); font-weight: 600; margin: 0 0 6px; }
 .basis-split { color: var(--muted); font-weight: 500; font-size: 0.72rem; }
 
-.visc-notice {
-  display: none;
-  background: var(--warn-bg);
-  border: 1px solid var(--warn);
-  color: var(--text);
-  border-radius: var(--radius);
-  padding: 12px 14px;
-  margin-bottom: 14px;
-  font-size: 0.82rem;
-  line-height: 1.45;
-}
-.visc-notice.open { display: block; }
-.visc-notice button {
-  margin-top: 10px;
-  margin-right: 8px;
-  height: 36px;
-  padding: 0 12px;
-  border-radius: 10px;
-  border: 1px solid var(--border);
-  background: var(--card);
-  color: var(--text);
-  font-weight: 700;
-  cursor: pointer;
-}
-.visc-notice .install-primary { background: var(--accent); color: #0b1120; border-color: transparent; }
-
 .mu-warn { color: var(--warn); font-size: 0.75rem; margin-top: 6px; }
 
 .check-grid {
@@ -656,15 +630,6 @@ tr.rec td { border-bottom-color: transparent; }
     </div>
   </div>
 
-  <div class="visc-notice" id="viscNotice">
-    <strong>This saved job is still on the old fixed viscosity (0.00131 Pa·s).</strong>
-    That figure is roughly water at 10 °C. Switching to temperature-corrected viscosity will change calculated pressure drops and may change the recommended pipe size — especially on LTHW / LPHW. This is not applied automatically.
-    <div>
-      <button type="button" class="install-primary" onclick="switchToTemperatureViscosity()">Use temperature-corrected viscosity</button>
-      <button type="button" onclick="dismissViscNotice()">Keep the legacy numbers</button>
-    </div>
-  </div>
-
   <div class="card">
     <div class="tabs">
       <button id="tabLthw" class="active" onclick="setSystem('LTHW')">LTHW / LPHW</button>
@@ -710,8 +675,8 @@ tr.rec td { border-bottom-color: transparent; }
       <div>
         <label>Viscosity</label>
         <select id="viscosityMode" onchange="onViscosityModeChange()">
-          <option value="temperature">Temperature-corrected (water)</option>
-          <option value="fixed">Legacy fixed 0.00131 Pa·s</option>
+          <option value="temperature">Temperature-corrected — use this</option>
+          <option value="fixed">Legacy fixed 0.00131 Pa·s — old calcs only</option>
         </select>
       </div>
       <div>
@@ -723,7 +688,11 @@ tr.rec td { border-bottom-color: transparent; }
         </select>
       </div>
     </div>
-    <p class="note" id="viscNote">Derived µ is for water only. Glycol mixes need a manual override — the percentage below is only a ratio on the water figure.</p>
+    <p class="note" id="viscNote">
+      <strong>Use temperature-corrected</strong> for design. Water gets much thinner as it heats, so LTHW/LPHW at 70 °C is about 0.00040 Pa·s, not 0.00131. The old tool used one fixed figure (water at ~10 °C) for every system, which overstated LTHW pressure drop by about 14% and could pick a size too large.<br>
+      <strong>Legacy fixed</strong> is only there if you need to match an older calculation. You do not need it for new work.<br>
+      Derived µ is for water only. Glycol is a ratio on that water figure, not a full glycol correlation.
+    </p>
     <p class="mu-warn" id="muWarn" style="display:none;">Mean temperature is outside 0–100 °C, so viscosity has fallen back to the legacy fixed value.</p>
     <div class="row" style="margin-bottom:10px;">
       <div>
@@ -937,7 +906,6 @@ const GLYCOL_TABLE = {
 let system = 'LTHW';
 let mode = 'ls';
 let tempMode = 'std';
-let legacyProject = false;
 
 function setSystem(s) {
   system = s;
@@ -1306,22 +1274,8 @@ function updateStraightCheck() {
 }
 
 function onViscosityModeChange() {
-  if (viscosityMode() === 'temperature') legacyProject = false;
-  document.getElementById('viscNotice').classList.toggle('open', legacyProject && viscosityMode() === 'fixed');
   saveSettings();
   recalc();
-}
-
-function switchToTemperatureViscosity() {
-  document.getElementById('viscosityMode').value = 'temperature';
-  legacyProject = false;
-  document.getElementById('viscNotice').classList.remove('open');
-  saveSettings();
-  recalc();
-}
-
-function dismissViscNotice() {
-  document.getElementById('viscNotice').classList.remove('open');
 }
 
 
@@ -1408,14 +1362,8 @@ function loadSettings() {
       document.getElementById('themeBtn').textContent = s.theme === 'dark' ? '🌙' : '☀️';
     }
     if (s.pipeCondition) document.getElementById('pipeCondition').value = s.pipeCondition;
-    if (s.viscosityMode === 'temperature' || s.viscosityMode === 'fixed') {
-      document.getElementById('viscosityMode').value = s.viscosityMode;
-      legacyProject = false;
-    } else {
-      document.getElementById('viscosityMode').value = 'fixed';
-      legacyProject = true;
-      document.getElementById('viscNotice').classList.add('open');
-    }
+    document.getElementById('viscosityMode').value =
+      s.viscosityMode === 'fixed' ? 'fixed' : 'temperature';
     if (s.system) setSystem(s.system);
     if (s.tempMode) setTempMode(s.tempMode);
     if (s.meanTemp) document.getElementById('meanTemp').value = s.meanTemp;

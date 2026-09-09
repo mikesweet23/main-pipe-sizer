@@ -603,7 +603,12 @@ tr.rec td { border-bottom-color: transparent; }
   margin: 0 2px;
 }
 
+.visc-row { margin-bottom: 10px; }
+
 /* Mobile */
+@media (max-width: 520px) {
+  .visc-row { grid-template-columns: 1fr; }
+}
 @media (max-width: 420px) {
   .adv-dn { font-size: 1.6rem; }
   .big-input { font-size: 1.4rem !important; }
@@ -679,7 +684,7 @@ tr.rec td { border-bottom-color: transparent; }
     <!-- Hidden fields still used by the calculation logic -->
     <input type="hidden" id="meanTemp" value="70">
 
-    <div class="row" style="margin-bottom:10px;">
+    <div class="row visc-row">
       <div>
         <label>Viscosity</label>
         <input type="text" id="viscosityLabel" value="Temperature corrected" readonly tabindex="-1" aria-readonly="true">

@@ -5,7 +5,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 <meta name="theme-color" content="#0f172a">
-<meta name="description" content="HVAC Pipe Sizer - LTHW 80/60 & Chilled Water with glycol allowance. Quick reference for True Bore SS and Schedule 10 CS at 300 Pa/m.">
+<meta name="description" content="HVAC Pipe Sizer - LTHW 80/60 & Chilled Water with glycol allowance. Quick reference for Tru-Bore Metric SS and BS EN 10255 carbon steel.">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Pipe Sizer">
@@ -444,6 +444,59 @@ tr.rec td { border-bottom-color: transparent; }
   opacity: 0.75;
 }
 
+.basis-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px 12px;
+  font-size: 0.78rem;
+}
+.basis-grid dt { color: var(--muted); font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.04em; }
+.basis-grid dd { color: var(--text); font-weight: 600; margin: 0 0 6px; }
+.basis-split { color: var(--muted); font-weight: 500; font-size: 0.72rem; }
+
+.visc-notice {
+  display: none;
+  background: var(--warn-bg);
+  border: 1px solid var(--warn);
+  color: var(--text);
+  border-radius: var(--radius);
+  padding: 12px 14px;
+  margin-bottom: 14px;
+  font-size: 0.82rem;
+  line-height: 1.45;
+}
+.visc-notice.open { display: block; }
+.visc-notice button {
+  margin-top: 10px;
+  margin-right: 8px;
+  height: 36px;
+  padding: 0 12px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: var(--text);
+  font-weight: 700;
+  cursor: pointer;
+}
+.visc-notice .install-primary { background: var(--accent); color: #0b1120; border-color: transparent; }
+
+.mu-warn { color: var(--warn); font-size: 0.75rem; margin-top: 6px; }
+
+.check-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.check-out {
+  margin-top: 10px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+.check-out strong { display: block; color: var(--text); font-size: 1rem; }
+
 .hidden { display: none !important; }
 
 .header-actions {
@@ -583,7 +636,7 @@ tr.rec td { border-bottom-color: transparent; }
   <div class="header">
     <div class="header-left">
       <h1>HVAC Pipe Sizer</h1>
-      <p class="subtitle">LTHW / LPHW · Chilled Water · True Bore SS & Schedule 10 CS</p>
+      <p class="subtitle">LTHW / LPHW · Chilled Water · Tru-Bore Metric SS & BS EN 10255 CS</p>
     </div>
     <div class="header-actions">
       <button type="button" class="install-header-btn" id="installHeaderBtn" onclick="openInstallPrompt()">Add to Home</button>
@@ -600,6 +653,15 @@ tr.rec td { border-bottom-color: transparent; }
         <button type="button" class="install-primary" id="installPrimaryBtn" onclick="handleInstallPrimary()">Add to Home Screen</button>
         <button type="button" class="install-secondary" onclick="dismissInstallPrompt()">Not now</button>
       </div>
+    </div>
+  </div>
+
+  <div class="visc-notice" id="viscNotice">
+    <strong>This saved job is still on the old fixed viscosity (0.00131 Pa·s).</strong>
+    That figure is roughly water at 10 °C. Switching to temperature-corrected viscosity will change calculated pressure drops and may change the recommended pipe size — especially on LTHW / LPHW. This is not applied automatically.
+    <div>
+      <button type="button" class="install-primary" onclick="switchToTemperatureViscosity()">Use temperature-corrected viscosity</button>
+      <button type="button" onclick="dismissViscNotice()">Keep the legacy numbers</button>
     </div>
   </div>
 
@@ -646,7 +708,26 @@ tr.rec td { border-bottom-color: transparent; }
 
     <div class="row" style="margin-bottom:10px;">
       <div>
-        <label>Pressure drop</label>
+        <label>Viscosity</label>
+        <select id="viscosityMode" onchange="onViscosityModeChange()">
+          <option value="temperature">Temperature-corrected (water)</option>
+          <option value="fixed">Legacy fixed 0.00131 Pa·s</option>
+        </select>
+      </div>
+      <div>
+        <label>Pipe condition</label>
+        <select id="pipeCondition" onchange="recalc(); saveSettings();">
+          <option value="new" selected>New / clean</option>
+          <option value="used">Used — light scaling</option>
+          <option value="corroded">Older / corroded</option>
+        </select>
+      </div>
+    </div>
+    <p class="note" id="viscNote">Derived µ is for water only. Glycol mixes need a manual override — the percentage below is only a ratio on the water figure.</p>
+    <p class="mu-warn" id="muWarn" style="display:none;">Mean temperature is outside 0–100 °C, so viscosity has fallen back to the legacy fixed value.</p>
+    <div class="row" style="margin-bottom:10px;">
+      <div>
+        <label>Pressure drop limit</label>
         <select id="paTarget" onchange="recalc(); saveSettings();">
           <option value="200">200 Pa/m</option>
           <option value="250">250 Pa/m</option>
@@ -667,10 +748,9 @@ tr.rec td { border-bottom-color: transparent; }
         </select>
       </div>
     </div>
-    <p class="pa-note" id="paNote" style="display:none;">Capacities scaled from 300 Pa/m base data (approx for turbulent flow).</p>
     <p class="note" id="glycolNote" style="display:none;">
       Ethylene Glycol = Mono Ethylene Glycol (MEG). Propylene is different (safer, higher viscosity).<br>
-      Glycol factors approximate. Max flow assumes reference viscosity; large temp deviations may need verification.
+      Glycol is applied as a ratio on water µ / ρ / cp — not a full glycol viscosity correlation. Use a manual override for design.
     </p>
     <p class="note" id="tempNote" style="margin-top:4px;">
       In <strong>Flow &amp; Return</strong> mode the temperature difference is calculated automatically from the two temperatures you enter.
@@ -692,17 +772,23 @@ tr.rec td { border-bottom-color: transparent; }
     <div class="card-title">Advisory Recommendation · ≤ 300 Pa/m</div>
     <div class="advisory">
       <div class="adv-card ss">
-        <div class="adv-label">304 SS True Bore</div>
+        <div class="adv-label" id="recSsLabel">304 SS Tru-Bore Metric</div>
         <div class="adv-dn" id="recSs">—</div>
         <div class="adv-margin" id="marginSs">—</div>
       </div>
       <div class="adv-card cs">
-        <div class="adv-label">Carbon Steel Sch.10</div>
+        <div class="adv-label" id="recCsLabel">Carbon Steel BS EN 10255</div>
         <div class="adv-dn" id="recCs">—</div>
         <div class="adv-margin" id="marginCs">—</div>
       </div>
     </div>
     <button class="copy-btn" id="copyBtn" onclick="copyResults()">Copy results</button>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Calculation basis</div>
+    <p class="note" style="margin-bottom:10px;">What the recommended sizes actually used. Straight pipe only — no fittings, single leg.</p>
+    <div class="basis-grid" id="basisGrid"></div>
   </div>
 
   <!-- Reverse lookup -->
@@ -729,21 +815,22 @@ tr.rec td { border-bottom-color: transparent; }
     <div class="check-card" id="checkResult" style="display:none;">
       <div class="check-result">
         <div>SS True Bore<br><strong id="checkSs">—</strong></div>
-        <div>CS Schedule 10<br><strong id="checkCs">—</strong></div>
+        <div>CS EN 10255<br><strong id="checkCs">—</strong></div>
       </div>
     </div>
   </div>
 
   <div class="card">
-    <div class="card-title">304 Stainless True Bore Metric</div>
+    <div class="card-title" id="tableSsTitle">304 Stainless Tru-Bore Metric</div>
     <div class="table-wrap">
       <table id="tableSs">
         <thead>
           <tr>
-            <th>DN</th>
+            <th>Size</th>
             <th>Max L/s</th>
             <th>Max kW</th>
             <th>Vel m/s</th>
+            <th>Pa/m</th>
             <th>Status</th>
           </tr>
         </thead>
@@ -753,121 +840,104 @@ tr.rec td { border-bottom-color: transparent; }
   </div>
 
   <div class="card">
-    <div class="card-title">Carbon Steel Schedule 10</div>
+    <div class="card-title" id="tableCsTitle">Carbon Steel BS EN 10255 Medium</div>
     <div class="table-wrap">
       <table id="tableCs">
         <thead>
           <tr>
-            <th>DN</th>
-            <th>ID mm</th>
+            <th>Size</th>
             <th>Max L/s</th>
             <th>Max kW</th>
             <th>Vel m/s</th>
+            <th>Pa/m</th>
             <th>Status</th>
           </tr>
         </thead>
         <tbody></tbody>
       </table>
     </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Straight-pipe check</div>
+    <p class="note" style="margin-bottom:10px;">Bare straight pipe only — no fittings, no length. For checking an external calculator. This does not write into the tables above.</p>
+    <div class="check-grid">
+      <div>
+        <label>Bore (mm)</label>
+        <input type="number" id="chkBore" value="100" min="1" step="0.1" oninput="updateStraightCheck()">
+      </div>
+      <div>
+        <label>Flow (L/s)</label>
+        <input type="number" id="chkFlow" value="16" min="0" step="0.01" oninput="updateStraightCheck()">
+      </div>
+      <div>
+        <label>Fluid temperature (°C)</label>
+        <input type="number" id="chkTemp" value="5" min="-20" max="150" step="0.5" oninput="updateStraightCheck()">
+      </div>
+      <div>
+        <label>Material &amp; condition</label>
+        <select id="chkMaterial" onchange="updateStraightCheck()">
+          <option value="stainless:new">Stainless, new — ε 0.015 mm</option>
+          <option value="stainless:used">Stainless, used — ε 0.030 mm</option>
+          <option value="stainless:corroded">Stainless, corroded — ε 0.060 mm</option>
+          <option value="carbon:new">Carbon, new — ε 0.046 mm</option>
+          <option value="carbon:used">Carbon, used — ε 0.120 mm</option>
+          <option value="carbon:corroded">Carbon, corroded — ε 0.500 mm</option>
+          <option value="smooth:new">Smooth (ε = 0)</option>
+        </select>
+      </div>
+    </div>
+    <div class="check-out" id="chkOut"></div>
   </div>
 
   <div class="card">
     <div class="card-title">Notes & Assumptions</div>
     <p class="note">
-      <strong>Straight pipe only</strong> at exactly 300 Pa/m (CIBSE typical upper guidance). Add equivalent lengths for fittings, valves, strainers and elevation separately.<br><br>
-      Roughness: Stainless ε = 0.015 mm · Carbon steel ε = 0.045 mm.<br>
-      LTHW fluid @ ~70 °C · CHW fluid @ ~10 °C.<br>
-      Velocities highlighted in amber when > 3 m/s (check noise / erosion).<br>
-      Ethylene Glycol = Mono Ethylene Glycol (MEG). Propylene glycol is different and more viscous.<br>
-      Glycol derates are approximate engineering estimates – always confirm properties and pressure-drop data with the fluid manufacturer for final design.
+      <strong>Straight pipe only</strong> at the selected Pa/m limit (CIBSE typical upper guidance 300 Pa/m). Add fittings, valves, strainers and elevation separately.<br><br>
+      Pipe tables: Tru-Bore Metric (ID = DN) and carbon steel BS EN 10255 Medium (DN100 = 105.3 mm).<br>
+      Darcy–Weisbach with Colebrook–White via Swamee–Jain; laminar f = 64/Re below Re 2300.<br>
+      Density and specific heat from the toolchain polynomial fits at mean operating temperature.<br>
+      Velocities highlighted in amber when &gt; 3 m/s (check noise / erosion).<br>
+      Ethylene Glycol = Mono Ethylene Glycol (MEG). Propylene glycol is different and more viscous.
     </p>
   </div>
   <div class="footer">Offline-capable · Add to Home Screen from the prompt on your phone · Guidance only</div>
 
 <script>
-// ========== PRECOMPUTED DATA (from team calculations) ==========
-const LTHW_SS = [
-  {dn:15, id:15, lps:0.102, kw:8.3, v:0.58},
-  {dn:20, id:20, lps:0.221, kw:18.1, v:0.70},
-  {dn:25, id:25, lps:0.402, kw:32.9, v:0.82},
-  {dn:32, id:32, lps:0.777, kw:63.6, v:0.97},
-  {dn:40, id:40, lps:1.407, kw:115.3, v:1.12},
-  {dn:50, id:50, lps:2.545, kw:208.5, v:1.30},
-  {dn:65, id:65, lps:5.099, kw:417.8, v:1.54},
-  {dn:80, id:80, lps:8.825, kw:723.1, v:1.76},
-  {dn:100, id:100, lps:15.891, kw:1302.1, v:2.02},
-  {dn:125, id:125, lps:28.583, kw:2342.0, v:2.33},
-  {dn:150, id:150, lps:46.135, kw:3780.3, v:2.61},
-  {dn:200, id:200, lps:98.061, kw:8035.1, v:3.12},
-  {dn:250, id:250, lps:175.793, kw:14404.4, v:3.58},
-  {dn:300, id:300, lps:283.029, kw:23191.3, v:4.00}
+// ========== PIPE TABLES (toolchain) ==========
+// Tru-Bore Metric: ID equals DN. Carbon: BS EN 10255 Medium, bore = OD - 2*wall.
+const SS_PIPES = [
+  {dn:15, id:15}, {dn:20, id:20}, {dn:25, id:25}, {dn:32, id:32}, {dn:40, id:40},
+  {dn:50, id:50}, {dn:65, id:65}, {dn:80, id:80}, {dn:100, id:100}, {dn:125, id:125},
+  {dn:150, id:150}, {dn:200, id:200}, {dn:250, id:250}, {dn:300, id:300}
 ];
-const LTHW_CS = [
-  {dn:15, id:17.08, lps:0.135, kw:11.1, v:0.59},
-  {dn:20, id:22.48, lps:0.282, kw:23.1, v:0.71},
-  {dn:25, id:27.86, lps:0.501, kw:41.0, v:0.82},
-  {dn:32, id:36.66, lps:1.040, kw:85.2, v:0.99},
-  {dn:40, id:42.76, lps:1.564, kw:128.2, v:1.09},
-  {dn:50, id:54.76, lps:3.011, kw:246.7, v:1.28},
-  {dn:65, id:66.90, lps:5.111, kw:418.8, v:1.45},
-  {dn:80, id:82.80, lps:8.966, kw:734.7, v:1.67},
-  {dn:100, id:108.20, lps:18.125, kw:1485.2, v:1.97},
-  {dn:125, id:134.50, lps:32.089, kw:2629.4, v:2.26},
-  {dn:150, id:161.50, lps:51.835, kw:4247.4, v:2.53},
-  {dn:200, id:211.58, lps:105.104, kw:8612.2, v:2.99},
-  {dn:250, id:264.62, lps:188.560, kw:15450.6, v:3.43},
-  {dn:300, id:314.66, lps:296.309, kw:24279.4, v:3.81}
-];
-const CHW_SS = [ // pure water, ΔT=6 base, Lps is max at 300Pa/m
-  {dn:15, id:15, lps:0.087, kw:2.2, v:0.49},
-  {dn:20, id:20, lps:0.191, kw:4.8, v:0.61},
-  {dn:25, id:25, lps:0.350, kw:8.8, v:0.71},
-  {dn:32, id:32, lps:0.683, kw:17.2, v:0.85},
-  {dn:40, id:40, lps:1.246, kw:31.3, v:0.99},
-  {dn:50, id:50, lps:2.270, kw:57.1, v:1.16},
-  {dn:65, id:65, lps:4.585, kw:115.3, v:1.38},
-  {dn:80, id:80, lps:7.982, kw:200.7, v:1.59},
-  {dn:100, id:100, lps:14.463, kw:363.7, v:1.84},
-  {dn:125, id:125, lps:26.163, kw:657.9, v:2.13},
-  {dn:150, id:150, lps:42.421, kw:1066.6, v:2.40},
-  {dn:200, id:200, lps:90.773, kw:2282.4, v:2.89},
-  {dn:250, id:250, lps:163.528, kw:4111.8, v:3.33},
-  {dn:300, id:300, lps:264.289, kw:6645.4, v:3.74}
-];
-const CHW_CS = [
-  {dn:15, id:17.08, lps:0.120, kw:3.0, v:0.52},
-  {dn:20, id:22.48, lps:0.253, kw:6.4, v:0.64},
-  {dn:25, id:27.86, lps:0.453, kw:11.4, v:0.74},
-  {dn:32, id:36.66, lps:0.949, kw:23.9, v:0.90},
-  {dn:40, id:42.76, lps:1.434, kw:36.1, v:1.00},
-  {dn:50, id:54.76, lps:2.782, kw:69.9, v:1.18},
-  {dn:65, id:66.90, lps:4.747, kw:119.4, v:1.35},
-  {dn:80, id:82.80, lps:8.375, kw:210.6, v:1.56},
-  {dn:100, id:108.20, lps:17.037, kw:428.4, v:1.85},
-  {dn:125, id:134.50, lps:30.306, kw:762.0, v:2.13},
-  {dn:150, id:161.50, lps:49.135, kw:1235.5, v:2.40},
-  {dn:200, id:211.58, lps:100.123, kw:2517.5, v:2.85},
-  {dn:250, id:264.62, lps:180.295, kw:4533.4, v:3.28},
-  {dn:300, id:314.66, lps:284.074, kw:7142.9, v:3.65}
+const CS_PIPES = [
+  {dn:15, id:16.0}, {dn:20, id:21.6}, {dn:25, id:27.2}, {dn:32, id:35.9}, {dn:40, id:41.8},
+  {dn:50, id:53.0}, {dn:65, id:68.8}, {dn:80, id:80.8}, {dn:100, id:105.3}, {dn:125, id:130.0},
+  {dn:150, id:155.4}, {dn:200, id:206.5}, {dn:250, id:260.4}, {dn:300, id:309.7}
 ];
 
-// Approximate derate factors for Ethylene Glycol (relative to pure water CHW)
-// Based on typical viscosity increase + Cp/density change. Conservative.
-const GLYCOL_DERATE = {
-  // Approximate relative to pure water CHW (viscosity effect on max flow + Cp/density on capacity)
-  // Conservative engineering estimates – always check manufacturer data
-  0:  { flow: 1.00, cap: 1.00 },
-  5:  { flow: 0.97, cap: 0.985 },
-  10: { flow: 0.94, cap: 0.97 },
-  15: { flow: 0.91, cap: 0.955 },
-  20: { flow: 0.87, cap: 0.94 },
-  25: { flow: 0.82, cap: 0.92 },
-  30: { flow: 0.75, cap: 0.90 },
-  40: { flow: 0.62, cap: 0.85 }
+const ROUGHNESS_MM = {
+  new:      { stainless: 0.015, carbon: 0.046 },
+  used:     { stainless: 0.030, carbon: 0.120 },
+  corroded: { stainless: 0.060, carbon: 0.500 }
+};
+
+const LEGACY_MU = 0.00131;
+const V_MIN = 0.3;
+const V_MAX = 3.0;
+
+/* [ρ, cp, μ, freeze °C] by glycol %, referenced to about 20 °C. */
+const GLYCOL_TABLE = {
+   0:[999,4.182,0.00131,0.0], 5:[1004,4.112,0.00152,-1.6], 10:[1009,4.042,0.00178,-3.3],
+  15:[1014,3.972,0.00208,-5.1], 20:[1019,3.902,0.00244,-7.1], 25:[1024,3.832,0.00287,-9.6],
+  30:[1029,3.762,0.00340,-13.0], 35:[1033,3.692,0.00405,-17.2], 40:[1038,3.622,0.00485,-22.3]
 };
 
 let system = 'LTHW';
-let mode = 'ls'; // 'ls' or 'kw'
+let mode = 'ls';
+let tempMode = 'std';
+let legacyProject = false;
 
 function setSystem(s) {
   system = s;
@@ -909,28 +979,8 @@ function setMode(m) {
   document.getElementById('modeLs').classList.toggle('active', m === 'ls');
   document.getElementById('modeKw').classList.toggle('active', m === 'kw');
   document.getElementById('inputLabel').textContent = m === 'ls' ? 'Required Flow (L/s)' : 'Required Capacity (kW)';
-  // Convert current value if switching
-  const inp = document.getElementById('mainInput');
-  const val = parseFloat(inp.value) || 0;
-  if (val > 0) {
-    const factor = getCapacityFactor();
-    if (m === 'ls' && mode !== 'ls') { // was kw, now ls
-      // already set
-    }
-    // Simple: leave the number, user adjusts. Or convert:
-    // For simplicity leave as-is; user knows context.
-  }
   recalc();
 }
-
-function waterProps(T) {
-  // Approximate pure water properties 0–100 °C
-  const rho = 1000.0 * (1 - (T + 288.9414) / (508929.2 * (T + 68.12963)) * Math.pow(T - 3.9863, 2));
-  const cp = 4.217 - 0.0025 * (T - 20) + 0.00002 * Math.pow(T - 20, 2);
-  return { rho: Math.max(960, Math.min(1000, rho)), cp: Math.max(4.1, Math.min(4.25, cp)) };
-}
-
-let tempMode = 'std'; // 'std' or 'custom'
 
 function setTempMode(m) {
   tempMode = m;
@@ -959,10 +1009,7 @@ function getEffectiveTemps() {
   if (tempMode === 'custom') {
     const flow = parseFloat(document.getElementById('flowTemp').value) || 0;
     const ret = parseFloat(document.getElementById('returnTemp').value) || 0;
-    return {
-      dt: Math.abs(flow - ret),
-      mean: (flow + ret) / 2
-    };
+    return { dt: Math.abs(flow - ret), mean: (flow + ret) / 2 };
   }
   return {
     dt: parseFloat(document.getElementById('deltaT').value) || (system === 'LTHW' ? 20 : 6),
@@ -970,92 +1017,214 @@ function getEffectiveTemps() {
   };
 }
 
-function getCapacityFactor() {
-  const { dt, mean } = getEffectiveTemps();
-  const props = waterProps(mean);
-  let factor = (props.rho * props.cp * dt) / 1000;
-  if (system === 'CHW') {
-    const g = parseInt(document.getElementById('glycol').value) || 0;
-    const der = GLYCOL_DERATE[g] || GLYCOL_DERATE[0];
-    factor *= der.cap;
+function waterRho(T) {
+  return ((1.051865e-05 * T - 5.171329e-03) * T - 6.179237e-03) * T + 1000.068;
+}
+function waterCp(T) {
+  return (((1.606849e-09 * T - 4.736562e-07) * T + 5.721385e-05) * T - 2.586464e-03) * T + 4.215269;
+}
+function waterMuDerived(T_C) {
+  const T_K = T_C + 273.15;
+  return 2.414e-5 * Math.pow(10, 247.8 / (T_K - 140));
+}
+
+function viscosityMode() {
+  const el = document.getElementById('viscosityMode');
+  return (el && el.value === 'fixed') ? 'fixed' : 'temperature';
+}
+
+function resolveMu(T_C, mode) {
+  if (mode === 'temperature') {
+    if (!(T_C >= 0 && T_C <= 100)) {
+      return { mu: LEGACY_MU, source: 'legacy fixed', warning: true };
+    }
+    return { mu: waterMuDerived(T_C), source: 'derived', warning: false };
   }
-  return factor;
+  return { mu: LEGACY_MU, source: 'legacy fixed', warning: false };
+}
+
+function glycolProps(pct) {
+  return GLYCOL_TABLE[pct] || GLYCOL_TABLE[0];
+}
+
+function fluidBasis() {
+  const { dt, mean } = getEffectiveTemps();
+  const mode = viscosityMode();
+  const muRes = resolveMu(mean, mode);
+  const pct = (system === 'CHW') ? (parseInt(document.getElementById('glycol').value) || 0) : 0;
+  const g = glycolProps(pct);
+  const w0 = glycolProps(0);
+  const rho = waterRho(mean) * (g[0] / w0[0]);
+  const cp = waterCp(mean) * (g[1] / w0[1]);
+  const mu = muRes.mu * (g[2] / w0[2]);
+  const muSource = pct ? (muRes.source + ' × glycol ratio') : muRes.source;
+  return { dt, mean, rho, cp, mu, muSource, muWarning: muRes.warning, glycolPct: pct, viscosityMode: mode };
+}
+
+function pipeCondition() {
+  return document.getElementById('pipeCondition').value || 'new';
+}
+
+function roughnessMm(material, condition) {
+  if (material === 'smooth') return 0;
+  const cond = ROUGHNESS_MM[condition] || ROUGHNESS_MM.new;
+  return cond[material] || 0.015;
+}
+
+function calcPD(flow_m3s, id_m, rho, mu, eps_m) {
+  const A = Math.PI * Math.pow(id_m / 2, 2);
+  const v = flow_m3s / A;
+  const Re = rho * v * id_m / mu;
+  let f;
+  if (Re < 2300) f = 64 / Math.max(Re, 1);
+  else {
+    const denom = Math.pow(Math.log10((eps_m / id_m) / 3.7 + 5.74 / Math.pow(Re, 0.9)), 2);
+    f = 0.25 / denom;
+  }
+  return { pd: f * (rho * v * v) / (2 * id_m), v, Re, f };
+}
+
+function maxFlowAtLimit(id_mm, rho, mu, eps_m, limit, vCap) {
+  const id_m = id_mm / 1000;
+  const A = Math.PI * Math.pow(id_m / 2, 2);
+  let lo = 1e-6, hi = 20;
+  if (calcPD(hi, id_m, rho, mu, eps_m).pd < limit) lo = hi;
+  else {
+    for (let i = 0; i < 60; i++) {
+      const mid = (lo + hi) / 2;
+      if (calcPD(mid, id_m, rho, mu, eps_m).pd <= limit) lo = mid;
+      else hi = mid;
+    }
+  }
+  if (vCap > 0 && lo / A > vCap) return { lps: A * vCap * 1000, v: vCap, bound: 'vel' };
+  return { lps: lo * 1000, v: lo / A, bound: 'pd' };
+}
+
+function getCapacityFactor() {
+  const b = fluidBasis();
+  return (b.rho * b.cp * b.dt) / 1000;
+}
+
+function sizeRows(pipes, material, requiredLps, basis, limit, condition) {
+  const eps_mm = roughnessMm(material, condition);
+  const eps_m = eps_mm / 1000;
+  return pipes.map(p => {
+    const cap = maxFlowAtLimit(p.id, basis.rho, basis.mu, eps_m, limit, V_MAX);
+    const at = requiredLps > 0
+      ? calcPD(requiredLps / 1000, p.id / 1000, basis.rho, basis.mu, eps_m)
+      : { pd: 0, v: 0, Re: 0, f: 0 };
+    return {
+      dn: p.dn,
+      id: p.id,
+      lps: cap.lps,
+      vCap: cap.v,
+      bound: cap.bound,
+      kw: cap.lps * (basis.rho * basis.cp * basis.dt) / 1000,
+      v: at.v,
+      pd: at.pd,
+      Re: at.Re,
+      f: at.f,
+      eps_mm,
+      material,
+      table: material === 'stainless' ? 'Tru-Bore Metric 304L' : 'Carbon steel BS EN 10255 Medium'
+    };
+  });
 }
 
 function getData() {
-  const pa = parseFloat(document.getElementById('paTarget').value) || 300;
-  const scale = Math.sqrt(pa / 300); // approximate turbulent scaling
-
-  // Update note visibility
-  const note = document.getElementById('paNote');
-  if (note) note.style.display = (pa === 300) ? 'none' : 'block';
-
-  if (system === 'LTHW') {
-    const ss = LTHW_SS.map(p => ({ ...p, lps: p.lps * scale, v: p.v * scale }));
-    const cs = LTHW_CS.map(p => ({ ...p, lps: p.lps * scale, v: p.v * scale }));
-    return { ss, cs };
-  }
-  const g = parseInt(document.getElementById('glycol').value) || 0;
-  const der = GLYCOL_DERATE[g] || GLYCOL_DERATE[0];
-  const ss = CHW_SS.map(p => ({
-    ...p,
-    lps: p.lps * der.flow * scale,
-    v: p.v * der.flow * scale
-  }));
-  const cs = CHW_CS.map(p => ({
-    ...p,
-    lps: p.lps * der.flow * scale,
-    v: p.v * der.flow * scale
-  }));
-  return { ss, cs };
+  const basis = fluidBasis();
+  const limit = parseFloat(document.getElementById('paTarget').value) || 300;
+  const cond = pipeCondition();
+  const inp = parseFloat(document.getElementById('mainInput').value) || 0;
+  let requiredLps;
+  const factor = (basis.rho * basis.cp * basis.dt) / 1000;
+  if (mode === 'ls') requiredLps = inp;
+  else requiredLps = factor > 0 ? inp / factor : 0;
+  return {
+    basis,
+    limit,
+    cond,
+    requiredLps,
+    ss: sizeRows(SS_PIPES, 'stainless', requiredLps, basis, limit, cond),
+    cs: sizeRows(CS_PIPES, 'carbon', requiredLps, basis, limit, cond)
+  };
 }
 
 function findRecommended(arr, requiredLps) {
+  if (requiredLps <= 0) return { idx: 0, item: arr[0] };
   for (let i = 0; i < arr.length; i++) {
-    if (arr[i].lps >= requiredLps - 1e-6) {
+    if (arr[i].pd <= (parseFloat(document.getElementById('paTarget').value) || 300)
+        && arr[i].v >= V_MIN && arr[i].v <= V_MAX) {
       return { idx: i, item: arr[i] };
     }
   }
-  return { idx: arr.length - 1, item: arr[arr.length - 1] }; // largest
+  for (let i = 0; i < arr.length; i++) {
+    if (arr[i].pd <= (parseFloat(document.getElementById('paTarget').value) || 300)) {
+      return { idx: i, item: arr[i] };
+    }
+  }
+  return { idx: arr.length - 1, item: arr[arr.length - 1] };
 }
 
-function statusText(maxLps, req) {
+function statusText(row, req, limit) {
   if (req <= 0) return { text: '—', cls: '' };
-  const pct = ((maxLps - req) / req) * 100;
+  if (row.pd > limit) return { text: row.pd.toFixed(0) + ' Pa/m over', cls: 'status-under' };
+  const pct = ((row.lps - req) / req) * 100;
   if (pct >= 15) return { text: `+${pct.toFixed(0)}% spare`, cls: 'status-ok' };
   if (pct >= 0) return { text: `+${pct.toFixed(0)}% tight`, cls: 'status-tight' };
   return { text: `${pct.toFixed(0)}% under`, cls: 'status-under' };
 }
 
+function condLabel(cond) {
+  return cond === 'used' ? 'used' : cond === 'corroded' ? 'corroded' : 'new';
+}
+
+function updateMaterialLabels(cond) {
+  const ssE = roughnessMm('stainless', cond);
+  const csE = roughnessMm('carbon', cond);
+  const lab = condLabel(cond);
+  document.getElementById('tableSsTitle').textContent = '304 Stainless Tru-Bore Metric — ε ' + ssE.toFixed(3) + ' mm (' + lab + ')';
+  document.getElementById('tableCsTitle').textContent = 'Carbon Steel BS EN 10255 Medium — ε ' + csE.toFixed(3) + ' mm (' + lab + ')';
+  document.getElementById('recSsLabel').textContent = '304 SS Tru-Bore · ε ' + ssE.toFixed(3) + ' mm';
+  document.getElementById('recCsLabel').textContent = 'Carbon EN 10255 · ε ' + csE.toFixed(3) + ' mm';
+}
+
+function renderBasis(data, recSs, recCs) {
+  const b = data.basis;
+  const warn = document.getElementById('muWarn');
+  if (warn) warn.style.display = b.muWarning ? '' : 'none';
+  const rows = [
+    ['SS internal diameter', 'DN' + recSs.item.dn + ' (' + recSs.item.id.toFixed(1) + ' mm) · ' + recSs.item.table],
+    ['CS internal diameter', 'DN' + recCs.item.dn + ' (' + recCs.item.id.toFixed(1) + ' mm) · ' + recCs.item.table],
+    ['Absolute roughness ε', 'SS ' + recSs.item.eps_mm.toFixed(3) + ' mm · CS ' + recCs.item.eps_mm.toFixed(3) + ' mm (' + condLabel(data.cond) + ')'],
+    ['Density ρ', b.rho.toFixed(1) + ' kg/m³ · derived from mean ' + b.mean.toFixed(1) + ' °C'],
+    ['Dynamic viscosity µ', b.mu.toExponential(4) + ' Pa·s · ' + b.muSource],
+    ['SS at duty', recSs.item.v.toFixed(2) + ' m/s · Re ' + Math.round(recSs.item.Re).toLocaleString() + ' · Darcy f ' + recSs.item.f.toFixed(5)],
+    ['CS at duty', recCs.item.v.toFixed(2) + ' m/s · Re ' + Math.round(recCs.item.Re).toLocaleString() + ' · Darcy f ' + recCs.item.f.toFixed(5)],
+    ['Δp per metre', 'SS ' + recSs.item.pd.toFixed(0) + ' Pa/m · CS ' + recCs.item.pd.toFixed(0) + ' Pa/m'],
+    ['Straight length', '1 m single leg · no fittings'],
+    ['Straight-pipe Δp / fittings Δp', (recSs.item.pd / 1000).toFixed(3) + ' kPa / 0 kPa (SS) · ' + (recCs.item.pd / 1000).toFixed(3) + ' kPa / 0 kPa (CS)']
+  ];
+  document.getElementById('basisGrid').innerHTML = rows.map(r =>
+    '<div><dt>' + r[0] + '</dt><dd>' + r[1] + '</dd></div>'
+  ).join('');
+}
+
 function recalc() {
+  const data = getData();
   const factor = getCapacityFactor();
-  const inp = parseFloat(document.getElementById('mainInput').value) || 0;
-  let requiredLps, requiredKw;
-  if (mode === 'ls') {
-    requiredLps = inp;
-    requiredKw = inp * factor;
-  } else {
-    requiredKw = inp;
-    requiredLps = factor > 0 ? inp / factor : 0;
-  }
-  // Always show both values
+  const requiredLps = data.requiredLps;
+  const requiredKw = requiredLps * factor;
   document.getElementById('dispLs').textContent = requiredLps.toFixed(3);
   document.getElementById('dispKw').textContent = requiredKw < 10 ? requiredKw.toFixed(1) : Math.round(requiredKw);
 
-  const data = getData();
-  // Update max kw for current factor
-  data.ss.forEach(p => p.kw = p.lps * factor);
-  data.cs.forEach(p => p.kw = p.lps * factor);
-
-  // Advisory
   const recSs = findRecommended(data.ss, requiredLps);
   const recCs = findRecommended(data.cs, requiredLps);
+  document.getElementById('recSs').textContent = 'DN' + recSs.item.dn + ' (' + recSs.item.id.toFixed(1) + ' mm)';
+  document.getElementById('recCs').textContent = 'DN' + recCs.item.dn + ' (' + recCs.item.id.toFixed(1) + ' mm)';
 
-  document.getElementById('recSs').textContent = 'DN' + recSs.item.dn;
-  document.getElementById('recCs').textContent = 'DN' + recCs.item.dn;
-
-  const mSs = statusText(recSs.item.lps, requiredLps);
-  const mCs = statusText(recCs.item.lps, requiredLps);
+  const mSs = statusText(recSs.item, requiredLps, data.limit);
+  const mCs = statusText(recCs.item, requiredLps, data.limit);
   const elSs = document.getElementById('marginSs');
   const elCs = document.getElementById('marginCs');
   elSs.textContent = mSs.text;
@@ -1063,31 +1232,33 @@ function recalc() {
   elCs.textContent = mCs.text;
   elCs.className = 'adv-margin ' + (mCs.cls === 'status-ok' ? 'ok' : mCs.cls === 'status-tight' ? 'tight' : 'under');
 
-  // Tables
-  renderTable('tableSs', data.ss, requiredLps, recSs.idx, false);
-  renderTable('tableCs', data.cs, requiredLps, recCs.idx, true);
+  updateMaterialLabels(data.cond);
+  renderTable('tableSs', data.ss, requiredLps, recSs.idx, data.limit);
+  renderTable('tableCs', data.cs, requiredLps, recCs.idx, data.limit);
+  renderBasis(data, recSs, recCs);
   updateCheck();
+  updateStraightCheck();
 }
 
-function renderTable(tableId, arr, req, recIdx, showId) {
+function renderTable(tableId, arr, req, recIdx, limit) {
   const tbody = document.querySelector('#' + tableId + ' tbody');
   tbody.innerHTML = '';
   arr.forEach((p, i) => {
-    const st = statusText(p.lps, req);
+    const st = statusText(p, req, limit);
     const tr = document.createElement('tr');
     if (i === recIdx) tr.classList.add('rec', tableId === 'tableSs' ? 'highlight-ss' : 'highlight-cs');
     const velClass = p.v > 3.0 ? 'vel-warn' : '';
-    let html = `<td>DN${p.dn}</td>`;
-    if (showId) html += `<td>${p.id.toFixed(1)}</td>`;
-    html += `<td>${p.lps.toFixed(2)}</td>`;
-    html += `<td>${p.kw < 10 ? p.kw.toFixed(1) : Math.round(p.kw)}</td>`;
-    html += `<td class="${velClass}">${p.v.toFixed(2)}</td>`;
-    html += `<td><span class="status-pill ${st.cls}">${st.text}</span></td>`;
-    tr.innerHTML = html;
+    const pdClass = p.pd > limit ? 'vel-warn' : '';
+    tr.innerHTML =
+      '<td>DN' + p.dn + ' (' + p.id.toFixed(1) + ' mm)</td>' +
+      '<td>' + p.lps.toFixed(2) + (p.bound === 'vel' ? ' *' : '') + '</td>' +
+      '<td>' + (p.kw < 10 ? p.kw.toFixed(1) : Math.round(p.kw)) + '</td>' +
+      '<td class="' + velClass + '">' + p.v.toFixed(2) + '</td>' +
+      '<td class="' + pdClass + '">' + (req > 0 ? p.pd.toFixed(0) : '—') + '</td>' +
+      '<td><span class="status-pill ' + st.cls + '">' + st.text + '</span></td>';
     tbody.appendChild(tr);
   });
 }
-
 
 function updateCheck() {
   const dn = parseInt(document.getElementById('checkDn').value);
@@ -1097,17 +1268,62 @@ function updateCheck() {
     return;
   }
   const data = getData();
-  const factor = getCapacityFactor();
   const ss = data.ss.find(p => p.dn === dn);
   const cs = data.cs.find(p => p.dn === dn);
   if (ss) {
-    document.getElementById('checkSs').textContent = ss.lps.toFixed(2) + ' L/s  ·  ' + (ss.lps * factor < 10 ? (ss.lps * factor).toFixed(1) : Math.round(ss.lps * factor)) + ' kW';
+    document.getElementById('checkSs').textContent =
+      ss.lps.toFixed(2) + ' L/s  ·  ' + (ss.kw < 10 ? ss.kw.toFixed(1) : Math.round(ss.kw)) + ' kW  ·  ' + ss.pd.toFixed(0) + ' Pa/m';
   }
   if (cs) {
-    document.getElementById('checkCs').textContent = cs.lps.toFixed(2) + ' L/s  ·  ' + (cs.lps * factor < 10 ? (cs.lps * factor).toFixed(1) : Math.round(cs.lps * factor)) + ' kW';
+    document.getElementById('checkCs').textContent =
+      cs.lps.toFixed(2) + ' L/s  ·  ' + (cs.kw < 10 ? cs.kw.toFixed(1) : Math.round(cs.kw)) + ' kW  ·  ' + cs.pd.toFixed(0) + ' Pa/m';
   }
   resultEl.style.display = 'block';
 }
+
+function updateStraightCheck() {
+  const bore = parseFloat(document.getElementById('chkBore').value);
+  const lps = parseFloat(document.getElementById('chkFlow').value);
+  const T = parseFloat(document.getElementById('chkTemp').value);
+  const spec = (document.getElementById('chkMaterial').value || 'stainless:new').split(':');
+  const out = document.getElementById('chkOut');
+  if (!out) return;
+  if (!(bore > 0) || !(lps > 0) || isNaN(T)) {
+    out.innerHTML = '';
+    return;
+  }
+  const muRes = resolveMu(T, viscosityMode());
+  const rho = waterRho(T);
+  const eps_mm = spec[0] === 'smooth' ? 0 : roughnessMm(spec[0], spec[1] || 'new');
+  const r = calcPD(lps / 1000, bore / 1000, rho, muRes.mu, eps_mm / 1000);
+  out.innerHTML =
+    '<div>Velocity<strong>' + r.v.toFixed(3) + ' m/s</strong></div>' +
+    '<div>Reynolds<strong>' + Math.round(r.Re).toLocaleString() + '</strong></div>' +
+    '<div>Darcy f<strong>' + r.f.toFixed(5) + '</strong></div>' +
+    '<div>Δp/m<strong>' + r.pd.toFixed(1) + ' Pa/m</strong></div>' +
+    '<div>µ used<strong>' + muRes.mu.toExponential(4) + ' Pa·s</strong></div>' +
+    '<div>ε<strong>' + eps_mm.toFixed(3) + ' mm · ' + muRes.source + '</strong></div>';
+}
+
+function onViscosityModeChange() {
+  if (viscosityMode() === 'temperature') legacyProject = false;
+  document.getElementById('viscNotice').classList.toggle('open', legacyProject && viscosityMode() === 'fixed');
+  saveSettings();
+  recalc();
+}
+
+function switchToTemperatureViscosity() {
+  document.getElementById('viscosityMode').value = 'temperature';
+  legacyProject = false;
+  document.getElementById('viscNotice').classList.remove('open');
+  saveSettings();
+  recalc();
+}
+
+function dismissViscNotice() {
+  document.getElementById('viscNotice').classList.remove('open');
+}
+
 
 function copyResults() {
   const factor = getCapacityFactor();
@@ -1134,8 +1350,8 @@ function copyResults() {
 Required: ${requiredLps.toFixed(3)} L/s  (${requiredKw < 10 ? requiredKw.toFixed(1) : Math.round(requiredKw)} kW)
 
 Recommended:
-• ${recSs} True Bore SS  (${marginSs})
-• ${recCs} Carbon Steel Sch.10  (${marginCs})
+• ${recSs} Tru-Bore Metric SS  (${marginSs})
+• ${recCs} Carbon Steel EN 10255  (${marginCs})
 
 (HVAC Pipe Sizer)`;
 
@@ -1173,6 +1389,8 @@ function saveSettings() {
       returnTemp: document.getElementById('returnTemp').value,
       paTarget: document.getElementById('paTarget').value,
       glycol: document.getElementById('glycol').value,
+      viscosityMode: viscosityMode(),
+      pipeCondition: pipeCondition(),
       input: document.getElementById('mainInput').value,
       theme: document.documentElement.getAttribute('data-theme') || 'dark'
     };
@@ -1188,6 +1406,15 @@ function loadSettings() {
     if (s.theme) {
       document.documentElement.setAttribute('data-theme', s.theme);
       document.getElementById('themeBtn').textContent = s.theme === 'dark' ? '🌙' : '☀️';
+    }
+    if (s.pipeCondition) document.getElementById('pipeCondition').value = s.pipeCondition;
+    if (s.viscosityMode === 'temperature' || s.viscosityMode === 'fixed') {
+      document.getElementById('viscosityMode').value = s.viscosityMode;
+      legacyProject = false;
+    } else {
+      document.getElementById('viscosityMode').value = 'fixed';
+      legacyProject = true;
+      document.getElementById('viscNotice').classList.add('open');
     }
     if (s.system) setSystem(s.system);
     if (s.tempMode) setTempMode(s.tempMode);
@@ -1207,10 +1434,12 @@ function loadSettings() {
 // Init
 const loaded = loadSettings();
 if (!loaded) {
+  document.getElementById('viscosityMode').value = 'temperature';
   setSystem('LTHW');
 }
 recalc();
 updateCheck();
+updateStraightCheck();
 
 // Auto-save on input change
 document.getElementById('mainInput').addEventListener('input', () => {

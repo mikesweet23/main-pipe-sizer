@@ -1,9 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="HVAC Pipe Sizer">
   <rect width="512" height="512" fill="#0f172a"/>
-  <circle cx="256" cy="256" r="196" fill="#151e2e"/>
-  <circle cx="256" cy="256" r="182" fill="none" stroke="#38bdf8" stroke-width="56"/>
-  <circle cx="256" cy="256" r="128" fill="#0f172a"/>
-  <circle cx="256" cy="256" r="22" fill="#38bdf8"/>
-  <circle cx="438" cy="256" r="10" fill="#bae6fd"/>
-  <circle cx="74" cy="256" r="10" fill="#bae6fd"/>
+  <circle cx="256" cy="256" r="150" fill="none" stroke="#38bdf8" stroke-width="64"/>
+  <circle cx="256" cy="256" r="118" fill="#0b1120"/>
+  <path d="M 106 256 A 150 150 0 0 1 205 115" fill="none" stroke="#bae6fd" stroke-width="24" stroke-linecap="round"/>
+  <path d="M256 195 C 256 195 210 258 210 292 a46 46 0 0 0 92 0 C 302 258 256 195 256 195 Z" fill="#e0f2fe"/>
 </svg>

@@ -122,6 +122,34 @@ ok(within(v, 2.037), 'Test 1 velocity ' + v.toFixed(4) + ' m/s ≈ 2.037');
   });
 }
 
+{
+  const SS = [
+    {dn:15, od:18, wall:1.5, id:15, kgm:0.62},
+    {dn:20, od:23, wall:1.5, id:20, kgm:0.81},
+    {dn:25, od:28, wall:1.5, id:25, kgm:0.99},
+    {dn:32, od:35, wall:1.5, id:32, kgm:1.26},
+    {dn:40, od:43, wall:1.5, id:40, kgm:1.56},
+    {dn:50, od:53, wall:1.5, id:50, kgm:1.93},
+    {dn:65, od:69, wall:2.0, id:65, kgm:3.30},
+    {dn:80, od:84, wall:2.0, id:80, kgm:4.10},
+    {dn:100, od:104, wall:2.0, id:100, kgm:5.01},
+    {dn:125, od:129, wall:2.0, id:125, kgm:6.35},
+    {dn:150, od:154, wall:2.0, id:150, kgm:7.60},
+    {dn:200, od:204, wall:2.0, id:200, kgm:10.30},
+    {dn:250, od:254, wall:2.0, id:250, kgm:12.60},
+    {dn:300, od:304, wall:2.0, id:300, kgm:15.12}
+  ];
+  ok(SS.length === 14, 'SS table has 14 sizes, DN15–DN300');
+  ok(SS[8].od === 104 && SS[8].id === 100 && SS[8].kgm === 5.01, 'SS DN100 is 104 / 100 / 5.01');
+  ok(SS[0].od === 18 && SS[0].kgm === 0.62, 'SS DN15 published infill 18 / 0.62');
+  ok(SS[3].od === 35 && SS[3].kgm === 1.26, 'SS DN32 published infill 35 / 1.26');
+  ok(SS[13].od === 304 && SS[13].kgm === 15.12, 'SS DN300 published infill 304 / 15.12');
+  SS.forEach(p => {
+    ok(p.id === p.dn, 'SS DN' + p.dn + ' ID = DN (true bore)');
+    ok(Math.abs((p.od - 2 * p.wall) - p.id) < 0.05, 'SS DN' + p.dn + ' ID = OD − 2×wall');
+  });
+}
+
 if (failed) {
   console.error('\n' + failed + ' failed');
   process.exit(1);

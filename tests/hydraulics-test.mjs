@@ -97,6 +97,31 @@ ok(within(v, 2.037), 'Test 1 velocity ' + v.toFixed(4) + ' m/s ≈ 2.037');
   ok(high.warning, 'Out-of-range high T sets warning');
 }
 
+{
+  const CS = [
+    {dn:15, od:21.3, wall:2.0, id:17.3, kgm:0.947},
+    {dn:20, od:26.9, wall:2.3, id:22.3, kgm:1.380},
+    {dn:25, od:33.7, wall:2.6, id:28.5, kgm:1.980},
+    {dn:32, od:42.4, wall:2.6, id:37.2, kgm:2.540},
+    {dn:40, od:48.3, wall:2.9, id:42.5, kgm:3.230},
+    {dn:50, od:60.3, wall:2.9, id:54.5, kgm:4.080},
+    {dn:65, od:76.1, wall:3.2, id:69.7, kgm:5.710},
+    {dn:80, od:88.9, wall:3.2, id:82.5, kgm:6.720},
+    {dn:100, od:114.3, wall:3.6, id:107.1, kgm:9.750},
+    {dn:125, od:139.7, wall:4.0, id:131.7, kgm:13.39},
+    {dn:150, od:168.3, wall:4.5, id:159.3, kgm:18.18},
+    {dn:200, od:219.1, wall:5.0, id:209.1, kgm:26.40},
+    {dn:250, od:273.0, wall:5.0, id:263.0, kgm:33.05},
+    {dn:300, od:323.9, wall:5.6, id:312.7, kgm:43.97},
+    {dn:350, od:355.6, wall:5.6, id:344.4, kgm:48.34}
+  ];
+  ok(CS.length === 15, 'CS table has 15 sizes including DN350');
+  ok(CS[8].id === 107.1 && CS[8].od === 114.3 && CS[8].kgm === 9.750, 'CS DN100 is 114.3 / 107.1 / 9.750');
+  CS.forEach(p => {
+    ok(Math.abs((p.od - 2 * p.wall) - p.id) < 0.05, 'CS DN' + p.dn + ' ID = OD − 2×wall');
+  });
+}
+
 if (failed) {
   console.error('\n' + failed + ' failed');
   process.exit(1);

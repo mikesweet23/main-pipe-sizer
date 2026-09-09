@@ -856,7 +856,7 @@ tr.rec td { border-bottom-color: transparent; }
     <div class="card-title">Advisory Recommendation · ≤ 300 Pa/m</div>
     <div class="advisory">
       <div class="adv-card ss">
-        <div class="adv-label" id="recSsLabel">304 SS Tru-Bore Metric</div>
+        <div class="adv-label" id="recSsLabel">304 SS Tru&#x2011;Bore Metric</div>
         <div class="adv-dn" id="recSs">—</div>
         <div class="adv-sub" id="subSs">—</div>
         <div class="adv-margin" id="marginSs">—</div>
@@ -1308,7 +1308,7 @@ function updateMaterialLabels(cond) {
   const lab = condLabel(cond);
   document.getElementById('tableSsTitle').innerHTML = symHtml('304 Stainless Tru-Bore Metric — ε ' + ssE.toFixed(3) + ' mm (' + lab + ')');
   document.getElementById('tableCsTitle').innerHTML = symHtml(CS_TABLE_NAME + ' — ε ' + csE.toFixed(3) + ' mm (' + lab + ')');
-  document.getElementById('recSsLabel').innerHTML = symHtml('304 SS Tru-Bore · ε ' + ssE.toFixed(3) + ' mm');
+  document.getElementById('recSsLabel').innerHTML = symHtml('304 SS Tru‑Bore · ε ' + ssE.toFixed(3) + ' mm');
   document.getElementById('recCsLabel').innerHTML = symHtml('Carbon light wall · ε ' + csE.toFixed(3) + ' mm');
 }
 

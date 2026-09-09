@@ -2,7 +2,7 @@
   "id": "/",
   "name": "HVAC Pipe Sizer",
   "short_name": "Pipe Sizer",
-  "description": "LTHW and chilled water pipe sizing for True Bore stainless and Schedule 10 carbon steel.",
+  "description": "LTHW and chilled water pipe sizing for Tru-Bore stainless and light-wall carbon steel.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

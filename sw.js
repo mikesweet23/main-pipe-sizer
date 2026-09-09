@@ -1,4 +1,4 @@
-const CACHE = 'hvac-pipe-sizer-v3';
+const CACHE = 'hvac-pipe-sizer-v4';
 const ASSETS = [
   './',
   './index.html',

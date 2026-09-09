@@ -5,7 +5,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 <meta name="theme-color" content="#0f172a">
-<meta name="description" content="HVAC Pipe Sizer - LTHW 80/60 & Chilled Water with glycol allowance. Quick reference for Tru-Bore Metric SS and BS EN 10255 carbon steel.">
+<meta name="description" content="HVAC Pipe Sizer - LTHW 80/60 & Chilled Water with glycol allowance. Quick reference for Tru-Bore Metric SS and light-wall carbon steel.">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Pipe Sizer">
@@ -404,7 +404,14 @@ th, td {
   border-bottom: 1px solid var(--border);
   white-space: nowrap;
 }
-th:first-child, td:first-child { text-align: left; }
+th:first-child, td:first-child { text-align: left; white-space: normal; }
+.size-meta {
+  display: block;
+  font-size: 0.68rem;
+  font-weight: 400;
+  color: var(--muted);
+  margin-top: 2px;
+}
 th {
   color: var(--muted);
   font-weight: 600;
@@ -623,7 +630,7 @@ tr.rec td { border-bottom-color: transparent; }
   <div class="header">
     <div class="header-left">
       <h1>HVAC Pipe Sizer</h1>
-      <p class="subtitle">LTHW / LPHW · Chilled Water · Tru-Bore Metric SS & BS EN 10255 CS</p>
+      <p class="subtitle">LTHW / LPHW · Chilled Water · Tru-Bore Metric SS & light-wall CS</p>
     </div>
     <div class="header-actions">
       <button type="button" class="install-header-btn" id="installHeaderBtn" onclick="openInstallPrompt()">Add to Home</button>
@@ -754,7 +761,7 @@ tr.rec td { border-bottom-color: transparent; }
         <div class="adv-margin" id="marginSs">—</div>
       </div>
       <div class="adv-card cs">
-        <div class="adv-label" id="recCsLabel">Carbon Steel BS EN 10255</div>
+        <div class="adv-label" id="recCsLabel">Carbon steel light wall</div>
         <div class="adv-dn" id="recCs">—</div>
         <div class="adv-margin" id="marginCs">—</div>
       </div>
@@ -788,11 +795,12 @@ tr.rec td { border-bottom-color: transparent; }
       <option value="200">DN200</option>
       <option value="250">DN250</option>
       <option value="300">DN300</option>
+      <option value="350">DN350</option>
     </select>
     <div class="check-card" id="checkResult" style="display:none;">
       <div class="check-result">
         <div>SS True Bore<br><strong id="checkSs">—</strong></div>
-        <div>CS EN 10255<br><strong id="checkCs">—</strong></div>
+        <div>CS light wall<br><strong id="checkCs">—</strong></div>
       </div>
     </div>
   </div>
@@ -817,7 +825,7 @@ tr.rec td { border-bottom-color: transparent; }
   </div>
 
   <div class="card">
-    <div class="card-title" id="tableCsTitle">Carbon Steel BS EN 10255 Medium</div>
+    <div class="card-title" id="tableCsTitle">Carbon steel light wall</div>
     <div class="table-wrap">
       <table id="tableCs">
         <thead>
@@ -871,7 +879,7 @@ tr.rec td { border-bottom-color: transparent; }
     <div class="card-title">Notes & Assumptions</div>
     <p class="note">
       <strong>Straight pipe only</strong> at the selected Pa/m limit (CIBSE typical upper guidance 300 Pa/m). Add fittings, valves, strainers and elevation separately.<br><br>
-      Pipe tables: Tru-Bore Metric (ID = DN) and carbon steel BS EN 10255 Medium (DN100 = 105.3 mm).<br>
+      Pipe tables: Tru-Bore Metric (ID = DN) and carbon steel light wall (OD, wall, ID and kg/m as tabulated; DN100 ID = 107.1 mm).<br>
       Darcy–Weisbach with Colebrook–White via Swamee–Jain; laminar f = 64/Re below Re 2300.<br>
       Water viscosity is temperature-corrected at the mean operating temperature. Density and specific heat from the toolchain polynomial fits at that same temperature.<br>
       Velocities highlighted in amber when &gt; 3 m/s (check noise / erosion).<br>
@@ -882,17 +890,31 @@ tr.rec td { border-bottom-color: transparent; }
 
 <script>
 // ========== PIPE TABLES (toolchain) ==========
-// Tru-Bore Metric: ID equals DN. Carbon: BS EN 10255 Medium, bore = OD - 2*wall.
+// Tru-Bore Metric: ID equals DN.
+// Carbon: light-wall table (OD, wall, ID, kg/m). ID = OD - 2*wall.
 const SS_PIPES = [
   {dn:15, id:15}, {dn:20, id:20}, {dn:25, id:25}, {dn:32, id:32}, {dn:40, id:40},
   {dn:50, id:50}, {dn:65, id:65}, {dn:80, id:80}, {dn:100, id:100}, {dn:125, id:125},
   {dn:150, id:150}, {dn:200, id:200}, {dn:250, id:250}, {dn:300, id:300}
 ];
 const CS_PIPES = [
-  {dn:15, id:16.0}, {dn:20, id:21.6}, {dn:25, id:27.2}, {dn:32, id:35.9}, {dn:40, id:41.8},
-  {dn:50, id:53.0}, {dn:65, id:68.8}, {dn:80, id:80.8}, {dn:100, id:105.3}, {dn:125, id:130.0},
-  {dn:150, id:155.4}, {dn:200, id:206.5}, {dn:250, id:260.4}, {dn:300, id:309.7}
+  {dn:15,  od:21.3,  wall:2.0, id:17.3,  kgm:0.947},
+  {dn:20,  od:26.9,  wall:2.3, id:22.3,  kgm:1.380},
+  {dn:25,  od:33.7,  wall:2.6, id:28.5,  kgm:1.980},
+  {dn:32,  od:42.4,  wall:2.6, id:37.2,  kgm:2.540},
+  {dn:40,  od:48.3,  wall:2.9, id:42.5,  kgm:3.230},
+  {dn:50,  od:60.3,  wall:2.9, id:54.5,  kgm:4.080},
+  {dn:65,  od:76.1,  wall:3.2, id:69.7,  kgm:5.710},
+  {dn:80,  od:88.9,  wall:3.2, id:82.5,  kgm:6.720},
+  {dn:100, od:114.3, wall:3.6, id:107.1, kgm:9.750},
+  {dn:125, od:139.7, wall:4.0, id:131.7, kgm:13.39},
+  {dn:150, od:168.3, wall:4.5, id:159.3, kgm:18.18},
+  {dn:200, od:219.1, wall:5.0, id:209.1, kgm:26.40},
+  {dn:250, od:273.0, wall:5.0, id:263.0, kgm:33.05},
+  {dn:300, od:323.9, wall:5.6, id:312.7, kgm:43.97},
+  {dn:350, od:355.6, wall:5.6, id:344.4, kgm:48.34}
 ];
+const CS_TABLE_NAME = 'Carbon steel light wall';
 
 const ROUGHNESS_MM = {
   new:      { stainless: 0.015, carbon: 0.046 },
@@ -1100,7 +1122,10 @@ function sizeRows(pipes, material, requiredLps, basis, limit, condition) {
       f: at.f,
       eps_mm,
       material,
-      table: material === 'stainless' ? 'Tru-Bore Metric 304L' : 'Carbon steel BS EN 10255 Medium'
+      od: p.od,
+      wall: p.wall,
+      kgm: p.kgm,
+      table: material === 'stainless' ? 'Tru-Bore Metric 304L' : CS_TABLE_NAME
     };
   });
 }
@@ -1158,9 +1183,9 @@ function updateMaterialLabels(cond) {
   const csE = roughnessMm('carbon', cond);
   const lab = condLabel(cond);
   document.getElementById('tableSsTitle').textContent = '304 Stainless Tru-Bore Metric — ε ' + ssE.toFixed(3) + ' mm (' + lab + ')';
-  document.getElementById('tableCsTitle').textContent = 'Carbon Steel BS EN 10255 Medium — ε ' + csE.toFixed(3) + ' mm (' + lab + ')';
+  document.getElementById('tableCsTitle').textContent = CS_TABLE_NAME + ' — ε ' + csE.toFixed(3) + ' mm (' + lab + ')';
   document.getElementById('recSsLabel').textContent = '304 SS Tru-Bore · ε ' + ssE.toFixed(3) + ' mm';
-  document.getElementById('recCsLabel').textContent = 'Carbon EN 10255 · ε ' + csE.toFixed(3) + ' mm';
+  document.getElementById('recCsLabel').textContent = 'Carbon light wall · ε ' + csE.toFixed(3) + ' mm';
 }
 
 function renderBasis(data, recSs, recCs) {
@@ -1169,7 +1194,7 @@ function renderBasis(data, recSs, recCs) {
   if (warn) warn.style.display = b.muWarning ? '' : 'none';
   const rows = [
     ['SS internal diameter', 'DN' + recSs.item.dn + ' (' + recSs.item.id.toFixed(1) + ' mm) · ' + recSs.item.table],
-    ['CS internal diameter', 'DN' + recCs.item.dn + ' (' + recCs.item.id.toFixed(1) + ' mm) · ' + recCs.item.table],
+    ['CS size', csSizeLine(recCs.item) + ' · ' + recCs.item.table],
     ['Absolute roughness ε', 'SS ' + recSs.item.eps_mm.toFixed(3) + ' mm · CS ' + recCs.item.eps_mm.toFixed(3) + ' mm (' + condLabel(data.cond) + ')'],
     ['Density ρ', b.rho.toFixed(1) + ' kg/m³ · derived from mean ' + b.mean.toFixed(1) + ' °C'],
     ['Dynamic viscosity µ', b.mu.toExponential(4) + ' Pa·s · ' + b.muSource],
@@ -1195,7 +1220,7 @@ function recalc() {
   const recSs = findRecommended(data.ss, requiredLps);
   const recCs = findRecommended(data.cs, requiredLps);
   document.getElementById('recSs').textContent = 'DN' + recSs.item.dn + ' (' + recSs.item.id.toFixed(1) + ' mm)';
-  document.getElementById('recCs').textContent = 'DN' + recCs.item.dn + ' (' + recCs.item.id.toFixed(1) + ' mm)';
+  document.getElementById('recCs').textContent = csSizeLine(recCs.item);
 
   const mSs = statusText(recSs.item, requiredLps, data.limit);
   const mCs = statusText(recCs.item, requiredLps, data.limit);
@@ -1214,6 +1239,19 @@ function recalc() {
   updateStraightCheck();
 }
 
+function formatKg(kg) {
+  return kg >= 10 ? kg.toFixed(2) : kg.toFixed(3);
+}
+
+function csSizeLine(p) {
+  return 'DN' + p.dn + ' (ID ' + p.id.toFixed(1) + ' mm)';
+}
+
+function csSizeMeta(p) {
+  if (!(p.od > 0)) return '';
+  return 'OD ' + p.od.toFixed(1) + ' · wall ' + p.wall.toFixed(1) + ' · ' + formatKg(p.kgm) + ' kg/m';
+}
+
 function renderTable(tableId, arr, req, recIdx, limit) {
   const tbody = document.querySelector('#' + tableId + ' tbody');
   tbody.innerHTML = '';
@@ -1223,8 +1261,11 @@ function renderTable(tableId, arr, req, recIdx, limit) {
     if (i === recIdx) tr.classList.add('rec', tableId === 'tableSs' ? 'highlight-ss' : 'highlight-cs');
     const velClass = p.v > 3.0 ? 'vel-warn' : '';
     const pdClass = p.pd > limit ? 'vel-warn' : '';
+    const sizeHtml = p.od
+      ? csSizeLine(p) + '<span class="size-meta">' + csSizeMeta(p) + '</span>'
+      : 'DN' + p.dn + ' (' + p.id.toFixed(1) + ' mm)';
     tr.innerHTML =
-      '<td>DN' + p.dn + ' (' + p.id.toFixed(1) + ' mm)</td>' +
+      '<td>' + sizeHtml + '</td>' +
       '<td>' + p.lps.toFixed(2) + (p.bound === 'vel' ? ' *' : '') + '</td>' +
       '<td>' + (p.kw < 10 ? p.kw.toFixed(1) : Math.round(p.kw)) + '</td>' +
       '<td class="' + velClass + '">' + p.v.toFixed(2) + '</td>' +
@@ -1244,14 +1285,13 @@ function updateCheck() {
   const data = getData();
   const ss = data.ss.find(p => p.dn === dn);
   const cs = data.cs.find(p => p.dn === dn);
-  if (ss) {
-    document.getElementById('checkSs').textContent =
-      ss.lps.toFixed(2) + ' L/s  ·  ' + (ss.kw < 10 ? ss.kw.toFixed(1) : Math.round(ss.kw)) + ' kW  ·  ' + ss.pd.toFixed(0) + ' Pa/m';
-  }
-  if (cs) {
-    document.getElementById('checkCs').textContent =
-      cs.lps.toFixed(2) + ' L/s  ·  ' + (cs.kw < 10 ? cs.kw.toFixed(1) : Math.round(cs.kw)) + ' kW  ·  ' + cs.pd.toFixed(0) + ' Pa/m';
-  }
+  document.getElementById('checkSs').textContent = ss
+    ? ss.lps.toFixed(2) + ' L/s  ·  ' + (ss.kw < 10 ? ss.kw.toFixed(1) : Math.round(ss.kw)) + ' kW  ·  ' + ss.pd.toFixed(0) + ' Pa/m'
+    : '—';
+  document.getElementById('checkCs').textContent = cs
+    ? cs.lps.toFixed(2) + ' L/s  ·  ' + (cs.kw < 10 ? cs.kw.toFixed(1) : Math.round(cs.kw)) + ' kW  ·  ' + cs.pd.toFixed(0) + ' Pa/m'
+      + (cs.od ? '  ·  ' + csSizeMeta(cs) : '')
+    : '—';
   resultEl.style.display = 'block';
 }
 
@@ -1305,7 +1345,7 @@ Required: ${requiredLps.toFixed(3)} L/s  (${requiredKw < 10 ? requiredKw.toFixed
 
 Recommended:
 • ${recSs} Tru-Bore Metric SS  (${marginSs})
-• ${recCs} Carbon Steel EN 10255  (${marginCs})
+• ${recCs} Carbon steel light wall  (${marginCs})
 
 (HVAC Pipe Sizer)`;
 
